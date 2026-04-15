@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloom Slot</title>
+<style>
+html,body{height:100%;margin:0;padding:0;overflow:hidden;}
+*{box-sizing:border-box;}
+body{background:#f0f0f0;display:flex;justify-content:center;align-items:flex-start;padding:6px;gap:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+
+.game{width:100%;max-width:440px;flex-shrink:0;zoom:0.87;}
+.top-bar{display:flex;gap:5px;margin-bottom:5px;}
+.stat{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 7px;}
+.stat-label{font-size:8px;color:#999;letter-spacing:.05em;text-transform:uppercase;}
+.stat-val{font-size:15px;font-weight:600;color:#111;line-height:1.2;}
+.stat-sub{font-size:8px;color:#aaa;}
+.bars-row{display:flex;gap:5px;margin-bottom:5px;}
+.bar-card{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 8px;}
+.bar-label{font-size:8px;color:#999;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;}
+.bar-label span{font-size:12px;font-weight:700;color:#111;letter-spacing:0;}
+.bar-track{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;width:0%;transition:width .4s ease;}
+.bar-sub{font-size:8px;color:#bbb;margin-top:2px;}
+.grid-wrap{position:relative;margin-bottom:5px;background:#f5f5f5;border-radius:11px;padding:7px;}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.cell{aspect-ratio:1;border-radius:9px;border:2px solid transparent;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;}
+.cell.dissolving-full{animation:pop-full .4s ease forwards;}
+.cell.dissolving-empty{animation:pop-empty .35s ease forwards;}
+.cell.new-in{animation:dropin .3s cubic-bezier(.22,.9,.4,1) forwards;}
+.cell.sending{animation:send-b .3s ease;}
+.cell.receiving{animation:recv-b .3s ease;}
+@keyframes pop-full{0%{transform:scale(1);opacity:1;}40%{transform:scale(1.3);}100%{transform:scale(0);opacity:0;}}
+@keyframes pop-empty{0%{transform:scale(1);opacity:1;}100%{transform:scale(0);opacity:0;}}
+@keyframes dropin{0%{transform:translateY(-18px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
+@keyframes send-b{0%{transform:scale(1);}40%{transform:scale(0.88);}100%{transform:scale(1);}}
+@keyframes recv-b{0%{transform:scale(1);}40%{transform:scale(1.13);}100%{transform:scale(1);}}
+.petal-num{font-size:15px;font-weight:700;line-height:1;}
+.pip-row{display:flex;gap:2px;}
+.pip{width:6px;height:6px;border-radius:50%;}
+.col-name{font-size:6px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;opacity:.65;}
+.arrow-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+.btn-row{display:flex;gap:5px;margin-bottom:5px;}
+button{flex:1;padding:7px 5px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#111;font-size:12px;font-weight:500;cursor:pointer;}
+button:hover{background:#f5f5f5;}
+button:disabled{opacity:.35;cursor:default;}
+button.primary{background:#111;color:#fff;border-color:#111;}
+button.primary:hover{background:#333;}
+.log{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 8px;min-height:28px;}
+.log-line{font-size:9px;color:#777;line-height:1.65;}
+.log-line.good{color:#15803d;font-weight:500;}
+.log-line.great{color:#b91c1c;font-weight:600;}
+.log-line.info{color:#444;}
+.phase-tag{display:inline-block;font-size:7px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:3px;margin-right:4px;}
+.tag-dissolve{background:#FCE7F3;color:#9D174D;}
+.tag-empty{background:#FEF9C3;color:#854D0E;}
+.tag-done{background:#DCFCE7;color:#166634;}
+
+.paytable{width:156px;flex-shrink:0;background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;}
+.pt-title{font-size:9px;font-weight:700;color:#999;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;}
+.pt-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f2f2f2;}
+.pt-row:last-child{border-bottom:none;}
+.pt-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.pt-info{flex:1;min-width:0;}
+.pt-name{font-size:10px;font-weight:600;color:#111;line-height:1.2;}
+.pt-freq{font-size:7px;color:#ccc;line-height:1.2;}
+.pt-pays{text-align:right;flex-shrink:0;}
+.pt-empty{font-size:9px;color:#555;font-weight:500;line-height:1.3;}
+.pt-full{font-size:9px;color:#b91c1c;font-weight:700;line-height:1.3;}
+.pt-divider{border:none;border-top:1px solid #f0f0f0;margin:6px 0;}
+.pt-rule{font-size:8px;color:#aaa;line-height:1.55;}
+.pt-rule b{color:#666;font-weight:600;}
+.pt-section{font-size:8px;font-weight:700;color:#bbb;letter-spacing:.05em;text-transform:uppercase;margin:7px 0 4px;}
+.pw-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;}
+.pw-label{font-size:9px;font-weight:600;color:#555;width:14px;text-align:center;}
+.pw-track{flex:1;height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
+.pw-fill{height:100%;border-radius:3px;background:#aaa;}
+.pw-pct{font-size:8px;color:#bbb;width:26px;text-align:right;}
+</style>
+</head>
+<body>
+
+<div class="game">
+  <div class="top-bar">
+    <div class="stat"><div class="stat-label">Balance</div><div class="stat-val" id="s-balance">1000</div><div class="stat-sub">coins</div></div>
+    <div class="stat"><div class="stat-label">Bet</div><div class="stat-val" id="s-bet">10</div><div class="stat-sub">per spin</div></div>
+    <div class="stat"><div class="stat-label">Last win</div><div class="stat-val" id="s-win">&#8212;</div><div class="stat-sub">coins</div></div>
+    <div class="stat"><div class="stat-label">Cascade</div><div class="stat-val" id="s-casc">&#8212;</div><div class="stat-sub">depth</div></div>
+  </div>
+
+  <div class="bars-row">
+    <div class="bar-card">
+      <div class="bar-label">Payout <span id="b-pay">0</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bf-pay" style="background:#16a34a;"></div></div>
+      <div class="bar-sub" id="bs-pay">dissolves accumulate here</div>
+    </div>
+    <div class="bar-card">
+      <div class="bar-label">Multiplier <span id="b-mult">1&#215;</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bf-mult" style="background:#dc2626;"></div></div>
+      <div class="bar-sub" id="bs-mult">full-5 blooms &#183; +2&#215; each</div>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+    <svg class="arrow-svg" id="asvg"></svg>
+  </div>
+
+  <div class="btn-row">
+    <button onclick="changeBet(-5)" id="btn-down">Bet &#8722;</button>
+    <button class="primary" onclick="doSpin()" id="btn-spin">Spin (10)</button>
+    <button onclick="changeBet(5)" id="btn-up">Bet +</button>
+  </div>
+
+  <div class="log" id="log"><div class="log-line">Press spin to start.</div></div>
+</div>
+
+<div class="paytable">
+  <div class="pt-title">Pay table</div>
+  <div id="pt-rows"></div>
+  <hr class="pt-divider">
+  <div class="pt-rule"><b>Empty dissolve</b> &#8594; base pay</div>
+  <div class="pt-rule"><b>Full bloom (5)</b> &#8594; 2&#215; base + adds 2&#215; mult</div>
+  <div class="pt-rule" style="margin-top:3px;"><b>Final win</b> = payout &#215; multiplier</div>
+  <div class="pt-section">Starting petals</div>
+  <div id="pw-rows"></div>
+</div>
+
+<script>
+/* ── COLOUR CONFIG ─────────────────────────────────────────
+   w  = spawn weight  (higher = more frequent)
+   pay= base payout on dissolve
+   Search: var COLS=
+──────────────────────────────────────────────────────────── */
+var COLS=[
+  {id:'scarlet', name:'Scarlet', hex:'#D50000',light:'#FFEBEE',border:'#FF8A80',text:'#B71C1C',pay:10,w:5,  freq:'rarest'},
+  {id:'indigo',  name:'Indigo',  hex:'#304FFE',light:'#E8EAF6',border:'#9FA8DA',text:'#1A237E',pay:8,w:7,  freq:'very rare'},
+  {id:'magenta', name:'Magenta', hex:'#C2185B',light:'#FCE4EC',border:'#F48FB1',text:'#880E4F',pay:6,w:9,  freq:'rare'},
+  {id:'gold',    name:'Gold',    hex:'#FF6F00',light:'#FFF8E1',border:'#FFD54F',text:'#E65100',pay:6,w:11, freq:'uncommon'},
+  {id:'teal',    name:'Teal',    hex:'#00796B',light:'#E0F2F1',border:'#80CBC4',text:'#004D40',pay:4,w:13, freq:'common'},
+  {id:'lime',    name:'Lime',    hex:'#558B2F',light:'#F1F8E9',border:'#AED581',text:'#1B5E20',pay:3,w:15, freq:'common'},
+  {id:'sky',     name:'Sky',     hex:'#0277BD',light:'#E1F5FE',border:'#81D4FA',text:'#01579B',pay:2, w:17, freq:'very common'},
+  {id:'pearl',   name:'Pearl',   hex:'#78909C',light:'#ECEFF1',border:'#B0BEC5',text:'#37474F',pay:1, w:20, freq:'most common'},
+];
+
+/* ── PETAL WEIGHT CONFIG ───────────────────────────────────
+   Index = petal count (1,2,3,4). Never 5 on spawn.
+   Higher number = more likely to spawn with that count.
+   Search: var PETAL_WEIGHTS=
+──────────────────────────────────────────────────────────── */
+var PETAL_WEIGHTS=[
+  {p:1, w:40},  // 40% — lots of 1s means more transfers visible
+  {p:2, w:35},  // 30%
+  {p:3, w:18},  // 20%
+  {p:4, w:7},  // 10% — rare to start near-full
+];
+
+var ROWS=4,NCOLS=5,MAX=8;
+var balance=1000,bet=10,spinning=false;
+var grid=[];
+var spinPay=0,spinMult=1,cascCount=0;
+
+// Build pay table rows
+(function(){
+  var el=document.getElementById('pt-rows');
+  el.innerHTML='';
+  for(var i=0;i<COLS.length;i++){
+    var c=COLS[i];
+    var row=document.createElement('div');
+    row.className='pt-row';
+    row.innerHTML=
+      '<div class="pt-dot" style="background:'+c.hex+'"></div>'+
+      '<div class="pt-info">'+
+        '<div class="pt-name">'+c.name+'</div>'+
+        '<div class="pt-freq">'+c.freq+'</div>'+
+      '</div>'+
+      '<div class="pt-pays">'+
+        '<div class="pt-empty">'+c.pay+'</div>'+
+        '<div class="pt-full">'+(c.pay*2)+'&#215;</div>'+
+      '</div>';
+    el.appendChild(row);
+  }
+})();
+
+// Build petal weight bars
+(function(){
+  var el=document.getElementById('pw-rows');
+  el.innerHTML='';
+  var total=PETAL_WEIGHTS.reduce(function(s,p){return s+p.w;},0);
+  for(var i=0;i<PETAL_WEIGHTS.length;i++){
+    var pw=PETAL_WEIGHTS[i];
+    var pct=Math.round(pw.w/total*100);
+    var row=document.createElement('div');
+    row.className='pw-row';
+    row.innerHTML=
+      '<div class="pw-label">'+pw.p+'</div>'+
+      '<div class="pw-track"><div class="pw-fill" style="width:'+pct+'%"></div></div>'+
+      '<div class="pw-pct">'+pct+'%</div>';
+    el.appendChild(row);
+  }
+})();
+
+var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+
+function wCol(){
+  var t=COLS.reduce(function(s,c){return s+c.w;},0);
+  var r=Math.random()*t;
+  for(var i=0;i<COLS.length;i++){r-=COLS[i].w;if(r<=0)return COLS[i];}
+  return COLS[COLS.length-1];
+}
+
+function wPetal(){
+  var t=PETAL_WEIGHTS.reduce(function(s,p){return s+p.w;},0);
+  var r=Math.random()*t;
+  for(var i=0;i<PETAL_WEIGHTS.length;i++){r-=PETAL_WEIGHTS[i].w;if(r<=0)return PETAL_WEIGHTS[i].p;}
+  return PETAL_WEIGHTS[PETAL_WEIGHTS.length-1].p;
+}
+
+function mkSym(){return{c:wCol(),p:wPetal()};}
+
+function initGrid(){
+  grid=[];
+  for(var r=0;r<ROWS;r++){grid.push([]);for(var c=0;c<NCOLS;c++)grid[r].push(mkSym());}
+}
+function cellEl(r,c){var g=document.getElementById('grid');return g?g.children[r*NCOLS+c]:null;}
+
+function renderCell(el,sym,anim){
+  if(!el)return;
+  el.className='cell';
+  if(!sym){el.style.cssText='background:#ececec;border-color:transparent;';el.innerHTML='';return;}
+  el.style.background=sym.c.light;
+  el.style.borderColor=sym.c.border;
+  var pips='';
+  for(var i=0;i<MAX;i++)pips+='<div class="pip" style="background:'+(i<sym.p?sym.c.hex:'#ddd')+'"></div>';
+  el.innerHTML='<div class="petal-num" style="color:'+sym.c.text+'">'+sym.p+'</div><div class="pip-row">'+pips+'</div><div class="col-name" style="color:'+sym.c.text+'">'+sym.c.name+'</div>';
+  if(anim){void el.offsetWidth;el.classList.add(anim);}
+}
+
+function buildGrid(){
+  var g=document.getElementById('grid');g.innerHTML='';
+  for(var r=0;r<ROWS;r++)for(var c=0;c<NCOLS;c++){
+    var d=document.createElement('div');d.className='cell';g.appendChild(d);renderCell(d,grid[r][c]);
+  }
+}
+
+function getCenter(r,c){
+  var wrap=document.querySelector('.grid-wrap');
+  var el=cellEl(r,c);
+  if(!el||!wrap)return{x:0,y:0};
+  var wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();
+  return{x:er.left-wr.left+er.width/2,y:er.top-wr.top+er.height/2};
+}
+
+function drawArrows(transfers){
+  var svg=document.getElementById('asvg');
+  svg.innerHTML='<defs><marker id="mh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 2L8 5L1 8" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>';
+  for(var i=0;i<transfers.length;i++){
+    var t=transfers[i];
+    var fr=t[0],fc=t[1],tr=t[2],tc=t[3],col=t[4];
+    var f=getCenter(fr,fc),to=getCenter(tr,tc);
+    var dx=to.x-f.x,dy=to.y-f.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+    var pad=14;
+    var x1=f.x+dx/len*pad,y1=f.y+dy/len*pad;
+    var x2=to.x-dx/len*(pad+3),y2=to.y-dy/len*(pad+3);
+    var line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1);line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+    line.setAttribute('stroke',col);line.setAttribute('stroke-width','3');
+    line.setAttribute('stroke-linecap','round');line.setAttribute('opacity','0.92');
+    line.setAttribute('marker-end','url(#mh)');
+    svg.appendChild(line);
+  }
+}
+
+function clearArrows(){document.getElementById('asvg').innerHTML='';}
+
+function updateBars(){
+  document.getElementById('b-pay').textContent=spinPay;
+  document.getElementById('bf-pay').style.width=Math.min(100,spinPay/800*100)+'%';
+  document.getElementById('bs-pay').textContent=spinPay>0?('\u00D7 mult at end \u00B7 cascade '+cascCount):'full blooms pay coins';
+  document.getElementById('b-mult').textContent=spinMult+'\u00D7';
+  document.getElementById('bf-mult').style.width=Math.min(100,(spinMult-1)/19*100)+'%';
+  document.getElementById('bs-mult').textContent=spinMult>1?(((spinMult-1)/2|0)+' empty dissolve(s) \u00B7 +2\u00D7 each'):'empty dissolves add 2\u00D7 each';
+}
+
+function addLog(html,cls){
+  var el=document.getElementById('log');
+  var d=document.createElement('div');d.className='log-line '+(cls||'');d.innerHTML=html;
+  el.insertBefore(d,el.firstChild);
+  while(el.children.length>4)el.removeChild(el.lastChild);
+}
+
+function setControls(off){
+  ['btn-spin','btn-down','btn-up'].forEach(function(id){document.getElementById(id).disabled=off;});
+}
+
+function doTransferPass(){
+  var next=grid.map(function(row){return row.map(function(s){return s?{c:s.c,p:s.p}:null;});});
+  var transfers=[];
+  var tryDirs=[[0,1],[1,0]];
+  for(var r=0;r<ROWS;r++){
+    for(var c=0;c<NCOLS;c++){
+      var s=grid[r][c];
+      if(!s||s.p===0)continue;
+      for(var d=0;d<tryDirs.length;d++){
+        var dr=tryDirs[d][0],dc=tryDirs[d][1];
+        var nr=r+dr,nc=c+dc;
+        if(nr<0||nr>=ROWS||nc<0||nc>=NCOLS||!grid[nr][nc])continue;
+        if(grid[nr][nc].c.id!==s.c.id)continue;
+        if(next[nr][nc].p>=MAX)continue;
+        next[r][c].p-=1;
+        next[nr][nc].p+=1;
+        transfers.push([r,c,nr,nc,s.c.hex]);
+        break;
+      }
+    }
+  }
+  if(!transfers.length)return{changed:false,transfers:[]};
+  grid=next;
+  return{changed:true,transfers:transfers};
+}
+
+function findDissolves(){
+  var out=[];
+  for(var r=0;r<ROWS;r++)for(var c=0;c<NCOLS;c++){
+    var s=grid[r][c];
+    if(s&&(s.p>=MAX||s.p===0))out.push([r,c,s.p>=MAX]);
+  }
+  return out;
+}
+
+async function doSpin(){
+  if(spinning||balance<bet)return;
+  spinning=true;setControls(true);
+  balance-=bet;
+  document.getElementById('s-balance').textContent=balance;
+  document.getElementById('s-win').textContent='--';
+  document.getElementById('s-casc').textContent='--';
+  spinPay=0;spinMult=1;cascCount=0;updateBars();
+  document.getElementById('log').innerHTML='';
+  addLog('Spin started&hellip;','info');
+  initGrid();buildGrid();
+  await sleep(400);
+
+  var safety=0;
+  while(safety++<120){
+    var passes=0;
+    while(passes++<30){
+      var result=doTransferPass();
+      if(!result.changed)break;
+      drawArrows(result.transfers);
+      for(var i=0;i<result.transfers.length;i++){
+        var t=result.transfers[i];
+        var fe=cellEl(t[0],t[1]),te=cellEl(t[2],t[3]);
+        renderCell(fe,grid[t[0]][t[1]]);
+        renderCell(te,grid[t[2]][t[3]]);
+        if(fe){fe.classList.remove('sending','receiving');void fe.offsetWidth;fe.classList.add('sending');}
+        if(te){te.classList.remove('sending','receiving');void te.offsetWidth;te.classList.add('receiving');}
+      }
+      await sleep(300);
+      clearArrows();
+      await sleep(50);
+    }
+
+    var dissolves=findDissolves();
+    if(!dissolves.length)break;
+    cascCount++;
+    document.getElementById('s-casc').textContent=cascCount;
+
+    for(var j=0;j<dissolves.length;j++){
+      var dv=dissolves[j];
+      var dr=dv[0],dc=dv[1],isFull=dv[2];
+      var s=grid[dr][dc];if(!s)continue;
+      var amt=isFull?s.c.pay:0;
+      spinPay+=amt;
+      if(isFull){
+        addLog('<span class="phase-tag tag-dissolve">Full bloom</span>'+s.c.name+' hit max &rarr; +'+amt+' coins','great');
+      } else {
+        spinMult+=2;
+        addLog('<span class="phase-tag tag-empty">Emptied</span>'+s.c.name+' gave all &rarr; +2&#215; multiplier','good');
+    }
+      var el=cellEl(dr,dc);
+      el.className='cell';
+      void el.offsetWidth;
+      el.classList.add(isFull?'dissolving-full':'dissolving-empty');
+      grid[dr][dc]=null;
+    }
+    updateBars();
+    await sleep(420);
+
+    for(var col=0;col<NCOLS;col++){
+      var wr=ROWS-1;
+      for(var row=ROWS-1;row>=0;row--){if(grid[row][col]){if(wr!==row){grid[wr][col]=grid[row][col];grid[row][col]=null;}wr--;}}
+      for(var row2=wr;row2>=0;row2--)grid[row2][col]=mkSym();
+    }
+    for(var ra=0;ra<ROWS;ra++)for(var ca=0;ca<NCOLS;ca++){
+      var ela=cellEl(ra,ca);ela.className='cell';renderCell(ela,grid[ra][ca]);
+    }
+    await sleep(50);
+    for(var rb=0;rb<ROWS;rb++)for(var cb=0;cb<NCOLS;cb++)renderCell(cellEl(rb,cb),grid[rb][cb],'new-in');
+    await sleep(360);
+  }
+
+  clearArrows();
+  var finalWin=Math.round(spinPay*spinMult);
+  balance+=finalWin;
+  document.getElementById('s-balance').textContent=balance;
+  document.getElementById('s-win').textContent=finalWin||0;
+  updateBars();
+  if(finalWin>0){
+    addLog('<span class="phase-tag tag-done">Final</span>'+spinPay+' &#215; '+spinMult+' = '+finalWin+' coins','great');
+  } else {
+    addLog('<span class="phase-tag tag-done">Done</span>No win this spin.','info');
+  }
+  spinning=false;setControls(false);
+}
+
+function changeBet(d){
+  bet=Math.max(5,Math.min(100,bet+d));
+  document.getElementById('s-bet').textContent=bet;
+  document.getElementById('btn-spin').textContent='Spin ('+bet+')';
+}
+
+initGrid();buildGrid();
+</script>
+</body>
+</html>
