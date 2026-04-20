@@ -333,10 +333,10 @@ function clearArrows(){document.getElementById('asvg').innerHTML='';}
 /* ── UI UPDATES ───────────────────────────────────────────── */
 function updateBars(){
   var dm=inFreeSpin?globalMult:spinMult;
-  var dp=inFreeSpin?fsTotalWin:spinPay;
+  var dp=spinPay;
   document.getElementById('b-pay').textContent=dp;
   document.getElementById('bf-pay').style.width=Math.min(100,dp/800*100)+'%';
-  document.getElementById('bs-pay').textContent=dp>0?'\u00D7 mult at end':'full blooms pay coins';
+  document.getElementById('bs-pay').textContent=dp>0?(inFreeSpin?'this spin · mult: '+dm+'×':'× mult at end'):'full blooms pay coins';
   document.getElementById('b-mult').textContent=dm+'\u00D7';
   document.getElementById('bf-mult').style.width=Math.min(100,(dm-1)/39*100)+'%';
   document.getElementById('bs-mult').textContent=inFreeSpin?'global mult \u00B7 never resets':(dm>1?((dm-1)/2|0)+' empty(s) \u00B7 +2\u00D7 each':'empty dissolves add 2\u00D7');
