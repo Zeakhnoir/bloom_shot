@@ -256,27 +256,25 @@ function updatePayTable(){
 }
 
 /* ── TRANSFER — k+1 COLLECTOR ALGORITHM ─────────────────────
-   For each connected same-colour component with total petals T:
-     k = floor(T / MAX)       → number of full-dissolve collectors
-     additional = T mod MAX   → petals for remainder collector
-   Elect k collectors (full, rightmost tiebreak) + 1 remainder
-   collector (leftmost tiebreak) if additional > 0.
-   Each full collector targets MAX petals.
-   Remainder collector targets exactly `additional` petals.
-   Collectors with excess petals send overflow to nearest full collector.
-   Regular cells route to nearest collector still needing petals.
-   Simultaneous copy-based, 1 petal per cell per pass.
+   total = additional + k × MAX
+   Elect k full collectors (target=MAX, rightmost tiebreak).
+   Elect 1 remainder collector if additional>0 (leftmost tiebreak).
+   Feeders route to nearest collector with remaining capacity.
+   Collectors send excess to nearest full collector.
+   Intermediate cells NOT blocked by collector targets (only MAX blocks).
+   p=0 cells included in topology so chains stay connected mid-transfer.
 ─────────────────────────────────────────────────────────────── */
 
 var DIRS4=[[0,1],[1,0],[0,-1],[-1,0]];
 
 function findComponents(){
+  // include p=0 cells (topology intact mid-transfer), exclude null (dissolved)
   var visited={};var components=[];
   for(var r=0;r<ROWS;r++){
     for(var c=0;c<NCOLS;c++){
       var key=r+','+c;if(visited[key])continue;
       var s=grid[r][c];
-      if(!s||s.p===0){visited[key]=true;continue;}
+      if(!s){visited[key]=true;continue;}  // null = truly dissolved
       var colId=s.c.id,comp=[],q=[[r,c]];visited[key]=true;
       while(q.length){
         var cur=q.shift();comp.push(cur);
@@ -285,7 +283,7 @@ function findComponents(){
           if(nr<0||nr>=ROWS||nc<0||nc>=NCOLS)continue;
           var nkey=nr+','+nc;if(visited[nkey])continue;
           var nb=grid[nr][nc];
-          if(!nb||nb.p===0||nb.c.id!==colId)continue;
+          if(!nb||nb.c.id!==colId)continue;  // null or different colour = boundary
           visited[nkey]=true;q.push([nr,nc]);
         }
       }
@@ -301,39 +299,31 @@ function getDegree(r,c,compSet){
   return deg;
 }
 
-function electCollectors(comp,compSet,k,additional){
-  // elect k full collectors (rightmost tiebreak) then 1 remainder (leftmost tiebreak)
-  var excl={};var fullCols=[];
-  for(var ki=0;ki<k;ki++){
-    var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
-    for(var i=0;i<comp.length;i++){
-      var r=comp[i][0],c=comp[i][1];
-      if(excl[r+','+c])continue;
-      var p=grid[r][c].p,deg=getDegree(r,c,compSet);
-      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
-        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
-      }
+function electRight(comp,compSet){
+  var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1],s=grid[r][c];
+    if(!s||s.p===0)continue;  // only elect from cells with petals
+    var p=s.p,deg=getDegree(r,c,compSet);
+    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
+      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
     }
-    if(best){fullCols.push(best);excl[best[0]+','+best[1]]=true;}
   }
-  var remCol=null;
-  if(additional>0){
-    var best=null,bP=-1,bD=-1,bR=-1,bC=9999;
-    for(var i=0;i<comp.length;i++){
-      var r=comp[i][0],c=comp[i][1];
-      if(excl[r+','+c])continue;
-      var p=grid[r][c].p,deg=getDegree(r,c,compSet);
-      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
-        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
-      }
+  return best;
+}
+
+function electLeft(comp,compSet,excl){
+  var best=null,bP=-1,bD=-1,bR=-1,bC=9999;
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1],s=grid[r][c];
+    if(!s||s.p===0)continue;
+    if(excl[r+','+c])continue;
+    var p=s.p,deg=getDegree(r,c,compSet);
+    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
+      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
     }
-    remCol=best;
   }
-  // build targets map: collector key → target petal count
-  var targets={};
-  for(var i=0;i<fullCols.length;i++)targets[fullCols[i][0]+','+fullCols[i][1]]=MAX;
-  if(remCol)targets[remCol[0]+','+remCol[1]]=additional;
-  return{fullCols:fullCols,remCol:remCol,targets:targets};
+  return best;
 }
 
 function bfsDist(startR,startC,compSet){
@@ -378,70 +368,112 @@ function doTransferPass(){
 
   for(var ci=0;ci<components.length;ci++){
     var comp=components[ci];
-    if(comp.length<2)continue;
     var compSet={};
     for(var i=0;i<comp.length;i++)compSet[comp[i][0]+','+comp[i][1]]=true;
+
+    // sum petals from active cells only
     var total=0;
-    for(var i=0;i<comp.length;i++)total+=grid[comp[i][0]][comp[i][1]].p;
+    for(var i=0;i<comp.length;i++){
+      var s=grid[comp[i][0]][comp[i][1]];
+      if(s&&s.p>0)total+=s.p;
+    }
+    if(total===0)continue;
 
     var k=Math.floor(total/MAX);
     var additional=total%MAX;
-    var res=electCollectors(comp,compSet,k,additional);
-    var fullCols=res.fullCols,remCol=res.remCol,targets=res.targets;
 
-    // build distance maps for all collectors
-    var distMaps={};
-    for(var i=0;i<fullCols.length;i++){
-      var fc=fullCols[i];
-      distMaps[fc[0]+','+fc[1]]=bfsDist(fc[0],fc[1],compSet);
+    // elect full collectors (rightmost tiebreak)
+    var excl={};var fullCols=[];
+    for(var ki=0;ki<k;ki++){
+      var winner=electRight(comp,compSet);
+      // electRight skips excl — but we need to pass excl. Rebuild to pass excl:
+      var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
+      for(var i=0;i<comp.length;i++){
+        var r=comp[i][0],cv=comp[i][1],s=grid[r][cv];
+        if(!s||s.p===0||excl[r+','+cv])continue;
+        var p=s.p,deg=getDegree(r,cv,compSet);
+        if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&cv>bC)){
+          best=comp[i];bP=p;bD=deg;bR=r;bC=cv;
+        }
+      }
+      if(best){fullCols.push(best);excl[best[0]+','+best[1]]=true;}
     }
-    if(remCol)distMaps[remCol[0]+','+remCol[1]]=bfsDist(remCol[0],remCol[1],compSet);
 
+    // elect remainder collector (leftmost tiebreak)
+    var remCol=null;
+    if(additional>0){
+      var best=null,bP=-1,bD=-1,bR=-1,bC=9999;
+      for(var i=0;i<comp.length;i++){
+        var r=comp[i][0],cv=comp[i][1],s=grid[r][cv];
+        if(!s||s.p===0||excl[r+','+cv])continue;
+        var p=s.p,deg=getDegree(r,cv,compSet);
+        if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&cv<bC)){
+          best=comp[i];bP=p;bD=deg;bR=r;bC=cv;
+        }
+      }
+      remCol=best;
+    }
+
+    // build targets map
+    var targets={};
+    for(var fi=0;fi<fullCols.length;fi++)targets[fullCols[fi][0]+','+fullCols[fi][1]]=MAX;
+    if(remCol)targets[remCol[0]+','+remCol[1]]=additional;
+    var tkeys=Object.keys(targets);
+
+    // build distance maps from each collector
+    var distMaps={};
+    for(var ti=0;ti<tkeys.length;ti++){
+      var tk=tkeys[ti],tp=tk.split(',');
+      distMaps[tk]=bfsDist(parseInt(tp[0]),parseInt(tp[1]),compSet);
+    }
+
+    // process ALL cells in comp (including p=0 intermediates that may relay)
     for(var i=0;i<comp.length;i++){
       var r=comp[i][0],cv=comp[i][1];
-      if(grid[r][cv].p===0)continue;
+      if(next[r][cv]===null||next[r][cv].p<=0)continue;
       var cellKey=r+','+cv;
-      var myTarget=targets.hasOwnProperty(cellKey)?targets[cellKey]:null;
+      var isCollector=targets.hasOwnProperty(cellKey);
 
-      if(myTarget!==null){
-        // this cell is a collector
-        var curP=next[r][cv].p;
-        if(curP<=myTarget)continue; // at/below target — don't send
-        // has excess — send to nearest full collector with capacity
-        var bestFC=null,bestD=999;
+      if(isCollector){
+        // send excess to nearest full collector
+        var myTgt=targets[cellKey];
+        if(next[r][cv].p<=myTgt)continue;
+        var bestFC=null,bestD=9999;
         for(var fi=0;fi<fullCols.length;fi++){
           var fc=fullCols[fi];
           if(fc[0]===r&&fc[1]===cv)continue;
-          if(next[fc[0]][fc[1]].p>=MAX)continue;
+          if(next[fc[0]][fc[1]]===null||next[fc[0]][fc[1]].p>=MAX)continue;
           var fk=fc[0]+','+fc[1];
-          var d=(distMaps[fk]||{})[cellKey]||999;
+          var d=(distMaps[fk]||{})[cellKey]||9999;
           if(d<bestD){bestD=d;bestFC=fc;}
         }
         if(!bestFC)continue;
         var nxt=bfsNextStep(r,cv,bestFC[0],bestFC[1],compSet);
         if(!nxt)continue;
         var nr=nxt[0],nc=nxt[1];
-        if(next[nr][nc].p>=MAX)continue;
+        if(next[nr][nc]===null||next[nr][nc].p>=MAX)continue;
         next[r][cv].p-=1;next[nr][nc].p+=1;
         transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
       } else {
-        // regular feeder — route to nearest collector still needing petals
-        var bestT=null,bestD=999;
-        var tkeys=Object.keys(targets);
+        // feeder: route to nearest collector with remaining capacity
+        var bestT=null,bestD=9999,bestIsFull=false;
         for(var ti=0;ti<tkeys.length;ti++){
-          var tk2=tkeys[ti];
-          var tparts=tk2.split(',');
-          var tr2=parseInt(tparts[0]),tc2=parseInt(tparts[1]);
-          if(next[tr2][tc2].p>=targets[tk2])continue;
-          var d=(distMaps[tk2]||{})[cellKey]||999;
-          if(d<bestD){bestD=d;bestT=[tr2,tc2];}
+          var tk=tkeys[ti],tp=tk.split(',');
+          var tr=parseInt(tp[0]),tc=parseInt(tp[1]);
+          var remaining=targets[tk]-(next[tr][tc]?next[tr][tc].p:0);
+          if(remaining<=0)continue;
+          var d=(distMaps[tk]||{})[cellKey]||9999;
+          var isFull=(targets[tk]===MAX);
+          if(d<bestD||(d===bestD&&isFull&&!bestIsFull)){
+            bestD=d;bestT=[tr,tc];bestIsFull=isFull;
+          }
         }
         if(!bestT)continue;
-        var tr=bestT[0],tc=bestT[1];
-        var nxt=bfsNextStep(r,cv,tr,tc,compSet);
+        var nxt=bfsNextStep(r,cv,bestT[0],bestT[1],compSet);
         if(!nxt)continue;
         var nr=nxt[0],nc=nxt[1];
-        if(next[nr][nc].p>=MAX)continue;
+        // only block on MAX — NOT on collector target (allows transit through)
+        if(next[nr][nc]===null||next[nr][nc].p>=MAX)continue;
         next[r][cv].p-=1;next[nr][nc].p+=1;
         transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
       }
