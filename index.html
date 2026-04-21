@@ -10,25 +10,18 @@ html,body{height:100%;margin:0;padding:0;overflow:hidden;}
 body{background:#f0f0f0;display:flex;justify-content:center;align-items:flex-start;padding:6px;gap:6px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 .game{width:100%;max-width:440px;flex-shrink:0;zoom:0.87;}
 .top-bar{display:flex;gap:5px;margin-bottom:5px;}
-.stat{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 7px;transition:background .3s,border-color .3s;}
+.stat{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 7px;}
 .stat-label{font-size:8px;color:#999;letter-spacing:.05em;text-transform:uppercase;}
 .stat-val{font-size:15px;font-weight:600;color:#111;line-height:1.2;}
 .stat-sub{font-size:8px;color:#aaa;}
 .bars-row{display:flex;gap:5px;margin-bottom:5px;}
-.bar-card{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 8px;transition:background .3s;}
+.bar-card{flex:1;background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 8px;}
 .bar-label{font-size:8px;color:#999;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;}
 .bar-label span{font-size:12px;font-weight:700;color:#111;letter-spacing:0;}
 .bar-track{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:3px;width:0%;transition:width .4s ease;}
 .bar-sub{font-size:8px;color:#bbb;margin-top:2px;}
-.game.freespin-mode .stat{background:#FFF8E1;border-color:#FFD54F;}
-.game.freespin-mode .bar-card{background:#FFF8E1;}
-.game.freespin-mode .grid-wrap{background:#FFF3E0;}
-.freespin-banner{display:none;background:#FF6F00;border-radius:8px;padding:5px 10px;margin-bottom:5px;text-align:center;}
-.freespin-banner.visible{display:block;}
-.freespin-banner-title{font-size:11px;font-weight:700;color:#fff;letter-spacing:.05em;text-transform:uppercase;}
-.freespin-banner-sub{font-size:9px;color:#FFE0B2;margin-top:1px;}
-.grid-wrap{position:relative;margin-bottom:5px;background:#f5f5f5;border-radius:11px;padding:7px;transition:background .3s;}
+.grid-wrap{position:relative;margin-bottom:5px;background:#f5f5f5;border-radius:11px;padding:7px;}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
 .cell{aspect-ratio:1;border-radius:9px;border:2px solid transparent;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;position:relative;}
 .cell.dissolving-full{animation:pop-full .4s ease forwards;}
@@ -52,41 +45,16 @@ button:hover{background:#f5f5f5;}
 button:disabled{opacity:.35;cursor:default;}
 button.primary{background:#111;color:#fff;border-color:#111;}
 button.primary:hover{background:#333;}
-button.buy-fs{background:#FF6F00;color:#fff;border-color:#E65100;font-weight:700;font-size:11px;}
-button.buy-fs:hover{background:#E65100;}
 .log{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:5px 8px;min-height:28px;}
 .log-line{font-size:9px;color:#777;line-height:1.65;}
 .log-line.good{color:#15803d;font-weight:500;}
 .log-line.great{color:#b91c1c;font-weight:600;}
 .log-line.info{color:#444;}
-.log-line.fs{color:#E65100;font-weight:700;}
-.log-line.crystal{color:#6D28D9;font-weight:700;}
 .phase-tag{display:inline-block;font-size:7px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:3px;margin-right:4px;}
 .tag-dissolve{background:#FCE7F3;color:#9D174D;}
 .tag-empty{background:#FEF9C3;color:#854D0E;}
 .tag-done{background:#DCFCE7;color:#166634;}
-.tag-crystal{background:#F3E8FF;color:#6D28D9;}
-.tag-scatter{background:#FFF3E0;color:#C2410C;}
-.tag-prism{background:#F3E8FF;color:#6D28D9;}
-/* prism */
-.cell.prism-cell{background:#F3E8FF;border-color:#A855F7;border-width:2.5px;}
-.cell.prism-cell.charged-1{border-color:#7C3AED;background:#EDE9FE;}
-.cell.prism-cell.charged-2{border-color:#5B21B6;background:#DDD6FE;border-width:3px;}
-.cell.dissolving-prism{animation:pop-prism .55s ease forwards;}
-.cell.row-flash{animation:rowflash .45s ease;}
-@keyframes pop-prism{0%{transform:scale(1);opacity:1;}35%{transform:scale(1.6);}100%{transform:scale(0);opacity:0;}}
-@keyframes rowflash{0%{transform:scale(1);}40%{transform:scale(1.1);}100%{transform:scale(1);}}
-.prism-label{font-size:6px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#7C3AED;opacity:.9;}
-/* scatter */
-.cell.scatter-cell{background:#FFF3E0;border-color:#FB923C;border-width:2.5px;}
-.cell.scatter-cell.sc-charged-1{border-color:#EA580C;background:#FEF3C7;}
-.cell.scatter-cell.sc-charged-2{border-color:#C2410C;background:#FDE68A;}
-.cell.scatter-cell.sc-charged-3{border-color:#9A3412;background:#FCD34D;border-width:3px;}
-.cell.dissolving-scatter{animation:pop-scatter .65s ease forwards;}
-@keyframes pop-scatter{0%{transform:scale(1);opacity:1;}30%{transform:scale(1.7);}70%{transform:scale(1.4);opacity:.8;}100%{transform:scale(0);opacity:0;}}
-.scatter-label{font-size:6px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#EA580C;opacity:.9;}
-/* paytable */
-.paytable{width:156px;flex-shrink:0;background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;overflow-y:auto;}
+.paytable{width:156px;flex-shrink:0;background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;}
 .pt-title{font-size:9px;font-weight:700;color:#999;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;}
 .pt-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #f2f2f2;}
 .pt-row:last-child{border-bottom:none;}
@@ -105,26 +73,15 @@ button.buy-fs:hover{background:#E65100;}
 .pw-track{flex:1;height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
 .pw-fill{height:100%;border-radius:3px;background:#aaa;}
 .pw-pct{font-size:8px;color:#bbb;width:26px;text-align:right;}
-.pt-symbol-box{border-radius:7px;padding:6px 8px;margin-top:5px;}
-.prism-box{background:#F3E8FF;border:1px solid #C4B5FD;}
-.scatter-box{background:#FFF3E0;border:1px solid #FCD34D;}
-.pt-symbol-title{font-size:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;}
-.prism-title{color:#6D28D9;}.scatter-title{color:#C2410C;}
-.pt-symbol-rule{font-size:8px;line-height:1.55;}
-.prism-rule{color:#7C3AED;}.scatter-rule{color:#EA580C;}
 </style>
 </head>
 <body>
 <div class="game" id="game-el">
-  <div class="freespin-banner" id="fs-banner">
-    <div class="freespin-banner-title">&#9733; Free Spins — Auto Playing</div>
-    <div class="freespin-banner-sub" id="fs-banner-sub">6 spins remaining &bull; global mult stacks forever</div>
-  </div>
   <div class="top-bar">
     <div class="stat"><div class="stat-label">Balance</div><div class="stat-val" id="s-balance">1000</div><div class="stat-sub">coins</div></div>
     <div class="stat"><div class="stat-label">Bet</div><div class="stat-val" id="s-bet">10</div><div class="stat-sub">per spin</div></div>
     <div class="stat"><div class="stat-label">Last win</div><div class="stat-val" id="s-win">&#8212;</div><div class="stat-sub">coins</div></div>
-    <div class="stat"><div class="stat-label" id="casc-label">Cascade</div><div class="stat-val" id="s-casc">&#8212;</div><div class="stat-sub" id="casc-sub">depth</div></div>
+    <div class="stat"><div class="stat-label">Cascade</div><div class="stat-val" id="s-casc">&#8212;</div><div class="stat-sub">depth</div></div>
   </div>
   <div class="bars-row">
     <div class="bar-card">
@@ -147,9 +104,6 @@ button.buy-fs:hover{background:#E65100;}
     <button class="primary" onclick="doSpin()" id="btn-spin">Spin (10)</button>
     <button onclick="changeBet(5)" id="btn-up">Bet +</button>
   </div>
-  <div class="btn-row" id="buy-fs-row">
-    <button class="buy-fs" onclick="buyFreeSpins()" id="btn-buy-fs">&#9733; Buy 6 Free Spins — 200 coins</button>
-  </div>
   <div class="log" id="log"><div class="log-line">Press spin to start.</div></div>
 </div>
 
@@ -160,23 +114,10 @@ button.buy-fs:hover{background:#E65100;}
   <div class="pt-rule"><b>Full bloom</b> &#8594; pays coins (scales with bet)</div>
   <div class="pt-rule"><b>Empty dissolve</b> &#8594; +2&#215; multiplier</div>
   <div class="pt-rule" style="margin-top:3px;"><b>Final win</b> = payout &#215; multiplier</div>
+  <div class="pt-section">Transfer rule</div>
+  <div class="pt-rule">Each cell sends 1 petal to the same-colour neighbour with the <b>most petals</b> (all 4 directions)</div>
   <div class="pt-section">Starting petals</div>
   <div id="pw-rows"></div>
-  <div class="pt-symbol-box prism-box" style="margin-top:6px;">
-    <div class="pt-symbol-title prism-title">&#9671; Bloom Prism</div>
-    <div class="pt-symbol-rule prism-rule">~10% spawn per cell</div>
-    <div class="pt-symbol-rule prism-rule">2 neighbour dissolves &#8594; converts row</div>
-    <div class="pt-symbol-rule prism-rule">Same row conflict: highest pay colour wins</div>
-    <div class="pt-symbol-rule prism-rule">Swept prisms reset to charge 0</div>
-  </div>
-  <div class="pt-symbol-box scatter-box" style="margin-top:5px;">
-    <div class="pt-symbol-title scatter-title">&#10022; Bloom Scatter</div>
-    <div class="pt-symbol-rule scatter-rule">~5% spawn per cell</div>
-    <div class="pt-symbol-rule scatter-rule">3 neighbour dissolves &#8594; 6 free spins</div>
-    <div class="pt-symbol-rule scatter-rule">Auto-plays all 6 spins</div>
-    <div class="pt-symbol-rule scatter-rule">Global mult stacks across all spins!</div>
-    <div class="pt-symbol-rule scatter-rule" style="margin-top:3px;font-weight:700;">Buy: 200 coins</div>
-  </div>
 </div>
 
 <script>
@@ -193,21 +134,12 @@ var COLS=[
 ];
 /* ── PETAL WEIGHTS  (Search: var PETAL_WEIGHTS=) ─────────── */
 var PETAL_WEIGHTS=[{p:1,w:40},{p:2,w:35},{p:3,w:18},{p:4,w:7}];
-/* ── SPECIAL CONFIG  (Search: PRISM_SPAWN_PROB) ──────────── */
-var PRISM_SPAWN_PROB   = 0.10;
-var PRISM_CHARGE_MAX   = 2;
-var SCATTER_SPAWN_PROB = 0.05;
-var SCATTER_CHARGE_MAX = 3;
-var FREE_SPIN_COUNT    = 6;
-var FREE_SPIN_BUY_COST = 200;
 /* ── GRID PARAMS ──────────────────────────────────────────── */
 var ROWS=4,NCOLS=5,MAX=8;
 /* ── STATE ────────────────────────────────────────────────── */
 var balance=1000,bet=10,spinning=false;
 var grid=[];
-var spinPay=0,spinMult=1,cascCount=0,prismCount=0;
-var inFreeSpin=false,freeSpinsLeft=0;
-var globalMult=1,fsTotalWin=0;
+var spinPay=0,spinMult=1,cascCount=0;
 
 /* ── BUILD PAY TABLE ──────────────────────────────────────── */
 (function(){
@@ -246,12 +178,7 @@ function wPetal(){
   for(var i=0;i<PETAL_WEIGHTS.length;i++){r-=PETAL_WEIGHTS[i].w;if(r<=0)return PETAL_WEIGHTS[i].p;}
   return PETAL_WEIGHTS[PETAL_WEIGHTS.length-1].p;
 }
-function mkSym(){
-  var roll=Math.random();
-  if(roll<SCATTER_SPAWN_PROB) return{scatter:true,charge:0};
-  if(roll<SCATTER_SPAWN_PROB+PRISM_SPAWN_PROB) return{prism:true,c:wCol(),charge:0};
-  return{c:wCol(),p:wPetal()};
-}
+function mkSym(){return{c:wCol(),p:wPetal()};}
 function initGrid(){
   grid=[];
   for(var r=0;r<ROWS;r++){grid.push([]);for(var c=0;c<NCOLS;c++)grid[r].push(mkSym());}
@@ -263,36 +190,8 @@ function renderCell(el,sym,anim){
   if(!el)return;
   el.className='cell';
   if(!sym){el.style.cssText='background:#ececec;border-color:transparent;';el.innerHTML='';return;}
-  if(sym.prism){
-    el.classList.add('prism-cell');
-    if(sym.charge===1)el.classList.add('charged-1');
-    if(sym.charge>=2)el.classList.add('charged-2');
-    el.style.background=sym.c.light;el.style.borderColor='#A855F7';
-    var cb='';
-    for(var i=0;i<PRISM_CHARGE_MAX;i++)
-      cb+='<div style="width:8px;height:8px;border-radius:50%;display:inline-block;margin:0 1px;background:'+(i<sym.charge?'#7C3AED':'#DDD6FE')+'"></div>';
-    el.innerHTML='<div style="font-size:18px;color:'+sym.c.text+'">&#9671;</div>'+
-      '<div style="display:flex;justify-content:center;margin-top:1px;">'+cb+'</div>'+
-      '<div class="prism-label">'+sym.c.name+'</div>';
-    if(anim){void el.offsetWidth;el.classList.add(anim);}
-    return;
-  }
-  if(sym.scatter){
-    el.classList.add('scatter-cell');
-    if(sym.charge===1)el.classList.add('sc-charged-1');
-    if(sym.charge===2)el.classList.add('sc-charged-2');
-    if(sym.charge>=3)el.classList.add('sc-charged-3');
-    el.style.background='';el.style.borderColor='';
-    var sb='';
-    for(var i=0;i<SCATTER_CHARGE_MAX;i++)
-      sb+='<div style="width:8px;height:8px;border-radius:50%;display:inline-block;margin:0 1px;background:'+(i<sym.charge?'#EA580C':'#FED7AA')+'"></div>';
-    el.innerHTML='<div style="font-size:18px;color:#C2410C;">&#10022;</div>'+
-      '<div style="display:flex;justify-content:center;margin-top:1px;">'+sb+'</div>'+
-      '<div class="scatter-label">scatter</div>';
-    if(anim){void el.offsetWidth;el.classList.add(anim);}
-    return;
-  }
-  el.style.background=sym.c.light;el.style.borderColor=sym.c.border;
+  el.style.background=sym.c.light;
+  el.style.borderColor=sym.c.border;
   var pips='';
   for(var i=0;i<MAX;i++)pips+='<div class="pip" style="background:'+(i<sym.p?sym.c.hex:'#ddd')+'"></div>';
   el.innerHTML='<div class="petal-num" style="color:'+sym.c.text+'">'+sym.p+'</div>'+
@@ -330,47 +229,14 @@ function drawArrows(transfers){
 }
 function clearArrows(){document.getElementById('asvg').innerHTML='';}
 
-/* ── UI UPDATES ───────────────────────────────────────────── */
+/* ── UI ───────────────────────────────────────────────────── */
 function updateBars(){
-  var dm=inFreeSpin?globalMult:spinMult;
-  var dp=spinPay;
-  document.getElementById('b-pay').textContent=dp;
-  document.getElementById('bf-pay').style.width=Math.min(100,dp/800*100)+'%';
-  document.getElementById('bs-pay').textContent=dp>0?(inFreeSpin?'this spin · mult: '+dm+'×':'× mult at end'):'full blooms pay coins';
-  document.getElementById('b-mult').textContent=dm+'\u00D7';
-  document.getElementById('bf-mult').style.width=Math.min(100,(dm-1)/39*100)+'%';
-  document.getElementById('bs-mult').textContent=inFreeSpin?'global mult \u00B7 never resets':(dm>1?((dm-1)/2|0)+' empty(s) \u00B7 +2\u00D7 each':'empty dissolves add 2\u00D7');
-}
-function updateFSUI(){
-  var g=document.getElementById('game-el');
-  var banner=document.getElementById('fs-banner');
-  var buyRow=document.getElementById('buy-fs-row');
-  if(inFreeSpin){
-    g.classList.add('freespin-mode');
-    banner.classList.add('visible');
-    buyRow.style.display='none';
-    document.getElementById('casc-label').textContent='Free spins';
-    document.getElementById('casc-sub').textContent='remaining';
-    document.getElementById('s-casc').textContent=freeSpinsLeft;
-  } else {
-    g.classList.remove('freespin-mode');
-    banner.classList.remove('visible');
-    buyRow.style.display='flex';
-    document.getElementById('casc-label').textContent='Cascade';
-    document.getElementById('casc-sub').textContent='depth';
-  }
-}
-function updateFSBanner(){
-  document.getElementById('fs-banner-sub').textContent=
-    freeSpinsLeft+' spin'+(freeSpinsLeft!==1?'s':'')+' remaining \u00B7 global mult: '+globalMult+'\u00D7';
-  document.getElementById('s-casc').textContent=freeSpinsLeft;
-}
-function updatePayTable(){
-  var m=bet/10;
-  for(var i=0;i<COLS.length;i++){
-    var el=document.getElementById('pt-pay-'+COLS[i].id);
-    if(el)el.textContent=Math.round(COLS[i].pay*m);
-  }
+  document.getElementById('b-pay').textContent=spinPay;
+  document.getElementById('bf-pay').style.width=Math.min(100,spinPay/800*100)+'%';
+  document.getElementById('bs-pay').textContent=spinPay>0?'\u00D7 mult at end \u00B7 cascade '+cascCount:'full blooms pay coins';
+  document.getElementById('b-mult').textContent=spinMult+'\u00D7';
+  document.getElementById('bf-mult').style.width=Math.min(100,(spinMult-1)/19*100)+'%';
+  document.getElementById('bs-mult').textContent=spinMult>1?((spinMult-1)/2|0)+' empty(s) \u00B7 +2\u00D7 each':'empty dissolves add 2\u00D7';
 }
 function addLog(html,cls){
   var el=document.getElementById('log');
@@ -379,39 +245,180 @@ function addLog(html,cls){
   while(el.children.length>5)el.removeChild(el.lastChild);
 }
 function setControls(off){
-  document.getElementById('btn-spin').disabled=off;
-  document.getElementById('btn-down').disabled=off||inFreeSpin;
-  document.getElementById('btn-up').disabled=off||inFreeSpin;
-  document.getElementById('btn-buy-fs').disabled=off||inFreeSpin;
+  ['btn-spin','btn-down','btn-up'].forEach(function(id){document.getElementById(id).disabled=off;});
+}
+function updatePayTable(){
+  var m=bet/10;
+  for(var i=0;i<COLS.length;i++){
+    var el=document.getElementById('pt-pay-'+COLS[i].id);
+    if(el)el.textContent=Math.round(COLS[i].pay*m);
+  }
 }
 
-/* ── TRANSFER ─────────────────────────────────────────────── */
-function doTransferPass(){
-  var next=grid.map(function(row){return row.map(function(s){
-    if(!s)return null;
-    if(s.prism)return{prism:true,c:s.c,charge:s.charge};
-    if(s.scatter)return{scatter:true,charge:s.charge};
-    return{c:s.c,p:s.p};
-  });});
-  var transfers=[];
-  var dirs=[[0,1],[1,0]];
+/* ── TRANSFER — TWO-COLLECTOR COMPONENT ALGORITHM ────────────
+   For each connected same-colour component:
+   - If total petals >= 2×MAX: elect TWO collectors
+       RIGHT collector (full dissolve target):
+         Rule 1: most petals, Rule 2: most degree,
+         Rule 3: bottommost, Rule 4: rightmost
+       LEFT collector (empty dissolve / leftover target):
+         Same rules but Rule 4: LEFTMOST column
+   - If total petals >= MAX: elect ONE collector (right rules)
+   - Else: no transfers
+   Each non-collector routes toward its nearest collector (BFS).
+   Tie in distance → routes to right collector.
+   Simultaneous copy-based, 1 petal per cell per pass.
+─────────────────────────────────────────────────────────────── */
+
+var DIRS4=[[0,1],[1,0],[0,-1],[-1,0]];
+
+function findComponents(){
+  var visited={};
+  var components=[];
   for(var r=0;r<ROWS;r++){
     for(var c=0;c<NCOLS;c++){
+      var key=r+','+c;
+      if(visited[key])continue;
       var s=grid[r][c];
-      if(!s||s.prism||s.scatter||s.p===0)continue;
-      for(var d=0;d<dirs.length;d++){
-        var nr=r+dirs[d][0],nc=c+dirs[d][1];
-        if(nr<0||nr>=ROWS||nc<0||nc>=NCOLS||!grid[nr][nc])continue;
-        if(grid[nr][nc].prism||grid[nr][nc].scatter)continue;
-        if(grid[nr][nc].c.id!==s.c.id)continue;
-        if(next[nr][nc].p>=MAX)continue;
-        next[r][c].p-=1;next[nr][nc].p+=1;
-        transfers.push([r,c,nr,nc,s.c.hex]);break;
+      if(!s||s.p===0){visited[key]=true;continue;}
+      var colId=s.c.id;
+      var comp=[];
+      var q=[[r,c]];
+      visited[key]=true;
+      while(q.length){
+        var cur=q.shift();comp.push(cur);
+        for(var d=0;d<DIRS4.length;d++){
+          var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
+          if(nr<0||nr>=ROWS||nc<0||nc>=NCOLS)continue;
+          var nkey=nr+','+nc;if(visited[nkey])continue;
+          var nb=grid[nr][nc];
+          if(!nb||nb.p===0||nb.c.id!==colId)continue;
+          visited[nkey]=true;q.push([nr,nc]);
+        }
       }
+      components.push({cells:comp});
+    }
+  }
+  return components;
+}
+
+function getDegree(r,c,compSet){
+  var deg=0;
+  for(var d=0;d<DIRS4.length;d++){
+    if(compSet[(r+DIRS4[d][0])+','+(c+DIRS4[d][1])])deg++;
+  }
+  return deg;
+}
+
+function electRight(comp,compSet){
+  // Rule 1: most petals, Rule 2: most degree, Rule 3: bottommost, Rule 4: rightmost
+  var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1],p=grid[r][c].p,deg=getDegree(r,c,compSet);
+    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
+      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+    }
+  }
+  return best;
+}
+
+function electLeft(comp,compSet,exclude){
+  // Rule 1: most petals, Rule 2: most degree, Rule 3: bottommost, Rule 4: LEFTMOST
+  var best=null,bP=-1,bD=-1,bR=-1,bC=999;
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1];
+    if(exclude&&r===exclude[0]&&c===exclude[1])continue;
+    var p=grid[r][c].p,deg=getDegree(r,c,compSet);
+    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
+      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+    }
+  }
+  return best;
+}
+
+function bfsDist(startR,startC,compSet){
+  var dist={};var startKey=startR+','+startC;dist[startKey]=0;
+  var q=[[startR,startC]];
+  while(q.length){
+    var cur=q.shift();
+    for(var d=0;d<DIRS4.length;d++){
+      var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
+      var nkey=nr+','+nc;
+      if(!compSet[nkey]||dist.hasOwnProperty(nkey))continue;
+      dist[nkey]=dist[cur[0]+','+cur[1]]+1;q.push([nr,nc]);
+    }
+  }
+  return dist;
+}
+
+function bfsNextStep(fromR,fromC,toR,toC,compSet){
+  if(fromR===toR&&fromC===toC)return null;
+  var prev={};var startKey=fromR+','+fromC;var targetKey=toR+','+toC;
+  prev[startKey]=null;var q=[[fromR,fromC]];var found=false;
+  outer:while(q.length){
+    var cur=q.shift();
+    for(var d=0;d<DIRS4.length;d++){
+      var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
+      var nkey=nr+','+nc;
+      if(!compSet[nkey]||prev.hasOwnProperty(nkey))continue;
+      prev[nkey]=[cur[0],cur[1]];
+      if(nkey===targetKey){found=true;break outer;}
+      q.push([nr,nc]);
+    }
+  }
+  if(!found)return null;
+  var node=[toR,toC],nodeKey=targetKey;
+  while(prev[nodeKey]&&(prev[nodeKey][0]!==fromR||prev[nodeKey][1]!==fromC)){
+    node=prev[nodeKey];nodeKey=node[0]+','+node[1];
+  }
+  return node;
+}
+
+function doTransferPass(){
+  var next=grid.map(function(row){return row.map(function(s){return s?{c:s.c,p:s.p}:null;});});
+  var transfers=[];
+  var components=findComponents();
+
+  for(var ci=0;ci<components.length;ci++){
+    var comp=components[ci].cells;
+    if(comp.length<2)continue;
+    var compSet={};
+    for(var i=0;i<comp.length;i++)compSet[comp[i][0]+','+comp[i][1]]=true;
+    var total=0;
+    for(var i=0;i<comp.length;i++)total+=grid[comp[i][0]][comp[i][1]].p;
+    var rightCol=electRight(comp,compSet);
+    var leftCol=(total>=2*MAX)?electLeft(comp,compSet,rightCol):null;
+
+    var distRight=bfsDist(rightCol[0],rightCol[1],compSet);
+    var distLeft=leftCol?bfsDist(leftCol[0],leftCol[1],compSet):null;
+
+    for(var i=0;i<comp.length;i++){
+      var r=comp[i][0],c=comp[i][1];
+      if(grid[r][c].p===0)continue;
+      var isRight=r===rightCol[0]&&c===rightCol[1];
+      var isLeft=leftCol&&r===leftCol[0]&&c===leftCol[1];
+      if(isRight||isLeft)continue;
+
+      // choose nearest collector; tie → right
+      var target=rightCol;
+      if(leftCol){
+        var dR=distRight[r+','+c]||999;
+        var dL=distLeft[r+','+c]||999;
+        if(dL<dR)target=leftCol;
+      }
+      var tr=target[0],tc=target[1];
+      if(next[tr][tc].p>=MAX)continue;
+      var nxt=bfsNextStep(r,c,tr,tc,compSet);
+      if(!nxt)continue;
+      var nr=nxt[0],nc=nxt[1];
+      if(next[nr][nc].p>=MAX)continue;
+      next[r][c].p-=1;next[nr][nc].p+=1;
+      transfers.push([r,c,nr,nc,grid[r][c].c.hex]);
     }
   }
   if(!transfers.length)return{changed:false,transfers:[]};
-  grid=next;return{changed:true,transfers:transfers};
+  grid=next;
+  return{changed:true,transfers:transfers};
 }
 
 /* ── DISSOLVES ────────────────────────────────────────────── */
@@ -419,115 +426,27 @@ function findDissolves(){
   var out=[];
   for(var r=0;r<ROWS;r++)for(var c=0;c<NCOLS;c++){
     var s=grid[r][c];
-    if(s&&!s.prism&&!s.scatter&&(s.p>=MAX||s.p===0))out.push([r,c,s.p>=MAX]);
+    if(s&&(s.p>=MAX||s.p===0))out.push([r,c,s.p>=MAX]);
   }
   return out;
 }
 
-/* ── CHARGE SPECIALS ──────────────────────────────────────── */
-function chargeSpecials(dissolvedPos){
-  var dirs4=[[0,1],[0,-1],[1,0],[-1,0]],seen={};
-  var prismsToActivate=[],scattersToActivate=[];
-  for(var i=0;i<dissolvedPos.length;i++){
-    var dr=dissolvedPos[i][0],dc=dissolvedPos[i][1];
-    for(var d=0;d<dirs4.length;d++){
-      var nr=dr+dirs4[d][0],nc=dc+dirs4[d][1];
-      if(nr<0||nr>=ROWS||nc<0||nc>=NCOLS)continue;
-      var nb=grid[nr][nc];if(!nb)continue;
-      var key=nr+','+nc;if(seen[key])continue;
-      seen[key]=true;
-      if(nb.prism){
-        nb.charge+=1;renderCell(cellEl(nr,nc),nb);
-        if(nb.charge>=PRISM_CHARGE_MAX)prismsToActivate.push([nr,nc]);
-        else addLog('<span class="phase-tag tag-prism">Prism</span>charged '+nb.charge+'/'+PRISM_CHARGE_MAX+' ('+nb.c.name+')','crystal');
-      }
-      if(nb.scatter){
-        nb.charge+=1;renderCell(cellEl(nr,nc),nb);
-        if(nb.charge>=SCATTER_CHARGE_MAX)scattersToActivate.push([nr,nc]);
-        else addLog('<span class="phase-tag tag-scatter">Scatter</span>charged '+nb.charge+'/'+SCATTER_CHARGE_MAX,'fs');
-      }
-    }
-  }
-  return{prisms:prismsToActivate,scatters:scattersToActivate};
-}
+/* ── MAIN SPIN ────────────────────────────────────────────── */
+async function doSpin(){
+  if(spinning||balance<bet)return;
+  spinning=true;setControls(true);
+  balance-=bet;document.getElementById('s-balance').textContent=balance;
+  document.getElementById('s-win').textContent='--';
+  document.getElementById('s-casc').textContent='--';
+  spinPay=0;spinMult=1;cascCount=0;
+  updateBars();document.getElementById('log').innerHTML='';
+  addLog('Spin started\u2026','info');
+  initGrid();buildGrid();await sleep(400);
 
-/* ── PRISM ACTIVATION WITH EDGE CASE RULES ───────────────── */
-// Rule 1: same-row conflict — highest pay colour wins (leftmost if tied)
-// Rule 2: different rows — both apply independently
-// Rule 3: row conversion does NOT charge other prisms (it's not a dissolve)
-// Rule 4: prisms swept by a row conversion have their charge reset to 0
-async function activatePrisms(prismsToActivate){
-  if(!prismsToActivate.length)return;
-
-  // Group by row
-  var byRow={};
-  for(var i=0;i<prismsToActivate.length;i++){
-    var r=prismsToActivate[i][0],c=prismsToActivate[i][1];
-    if(!byRow[r])byRow[r]=[];
-    byRow[r].push([r,c]);
-  }
-
-  await sleep(250);
-
-  var rows=Object.keys(byRow);
-  for(var ri=0;ri<rows.length;ri++){
-    var row=parseInt(rows[ri]);
-    var candidates=byRow[row];
-
-    // Rule 1: pick winner — highest pay colour, leftmost on tie
-    var winner=candidates[0];
-    for(var ci=1;ci<candidates.length;ci++){
-      var wp=grid[winner[0]]&&grid[winner[0]][winner[1]]?grid[winner[0]][winner[1]].c.pay:0;
-      var cp=grid[candidates[ci][0]]&&grid[candidates[ci][0]][candidates[ci][1]]?grid[candidates[ci][0]][candidates[ci][1]].c.pay:0;
-      if(cp>wp||(cp===wp&&candidates[ci][1]<winner[1]))winner=candidates[ci];
-    }
-    var winnerCell=grid[winner[0]][winner[1]];
-    if(!winnerCell)continue;
-    var prismCol=winnerCell.c;
-
-    // Rule 4: reset charge on losing prisms in same row (swept by conversion)
-    for(var ci=0;ci<candidates.length;ci++){
-      if(candidates[ci][0]===winner[0]&&candidates[ci][1]===winner[1])continue;
-      var loser=grid[candidates[ci][0]][candidates[ci][1]];
-      if(loser&&loser.prism){loser.charge=0;renderCell(cellEl(candidates[ci][0],candidates[ci][1]),loser);}
-    }
-
-    // Convert all cells in row to winner colour
-    // Rule 4: any other prisms in the same row get their charge reset
-    for(var acc=0;acc<NCOLS;acc++){
-      var as=grid[row][acc];
-      if(!as)continue;
-      if(as.prism){
-        // only reset charge if it's not the winner and it's in the same row
-        if(!(row===winner[0]&&acc===winner[1])){
-          as.charge=0;
-          renderCell(cellEl(row,acc),as);
-        }
-        continue;
-      }
-      if(as.scatter)continue;
-      as.c=prismCol;
-      renderCell(cellEl(row,acc),as);
-      var acel=cellEl(row,acc);
-      if(acel){acel.classList.remove('row-flash');void acel.offsetWidth;acel.classList.add('row-flash');}
-    }
-
-    // Dissolve the winning prism
-    var apel=cellEl(winner[0],winner[1]);
-    apel.className='cell prism-cell';void apel.offsetWidth;apel.classList.add('dissolving-prism');
-    grid[winner[0]][winner[1]]=null;prismCount++;
-    addLog('<span class="phase-tag tag-prism">Prism!</span>Row '+row+' \u2192 '+prismCol.name+(candidates.length>1?' (won conflict)':''),'crystal');
-  }
-  await sleep(550);
-}
-
-/* ── CORE SPIN LOOP ───────────────────────────────────────── */
-async function runSpinLoop(){
-  var pendingFS=0;
   var safety=0;
   while(safety++<120){
     var passes=0;
-    while(passes++<30){
+    while(passes++<50){
       var result=doTransferPass();
       if(!result.changed)break;
       drawArrows(result.transfers);
@@ -538,50 +457,31 @@ async function runSpinLoop(){
         if(fe){fe.classList.remove('sending','receiving');void fe.offsetWidth;fe.classList.add('sending');}
         if(te){te.classList.remove('sending','receiving');void te.offsetWidth;te.classList.add('receiving');}
       }
-      await sleep(300);clearArrows();await sleep(50);
+      await sleep(280);clearArrows();await sleep(50);
     }
 
     var dissolves=findDissolves();
     if(!dissolves.length)break;
     cascCount++;
-    if(!inFreeSpin)document.getElementById('s-casc').textContent=cascCount;
+    document.getElementById('s-casc').textContent=cascCount;
 
-    var dissolvedPos=[];
     for(var j=0;j<dissolves.length;j++){
       var dv=dissolves[j],dr=dv[0],dc=dv[1],isFull=dv[2];
       var s=grid[dr][dc];if(!s)continue;
       var amt=isFull?Math.round(s.c.pay*(bet/10)):0;
       spinPay+=amt;
       if(isFull){
-        addLog('<span class="phase-tag tag-dissolve">Full bloom</span>'+s.c.name+' &rarr; +'+amt+' coins','great');
+        addLog('<span class="phase-tag tag-dissolve">Full bloom</span>'+s.c.name+' hit max &rarr; +'+amt+' coins','great');
       } else {
-        if(inFreeSpin)globalMult+=2;else spinMult+=2;
-        addLog('<span class="phase-tag tag-empty">Emptied</span>'+s.c.name+' &rarr; +2\u00D7 '+(inFreeSpin?'global mult':'mult'),'good');
+        spinMult+=2;
+        addLog('<span class="phase-tag tag-empty">Emptied</span>'+s.c.name+' gave all &rarr; +2\u00D7 mult','good');
       }
       var el=cellEl(dr,dc);
       el.className='cell';void el.offsetWidth;
       el.classList.add(isFull?'dissolving-full':'dissolving-empty');
-      grid[dr][dc]=null;dissolvedPos.push([dr,dc]);
+      grid[dr][dc]=null;
     }
     updateBars();await sleep(420);
-
-    var special=chargeSpecials(dissolvedPos);
-
-    // activate prisms with edge case rules
-    await activatePrisms(special.prisms);
-
-    // activate scatters
-    if(special.scatters.length>0){
-      for(var sk=0;sk<special.scatters.length;sk++){
-        var sr=special.scatters[sk][0],sc2=special.scatters[sk][1];
-        var sel=cellEl(sr,sc2);
-        sel.className='cell scatter-cell';void sel.offsetWidth;sel.classList.add('dissolving-scatter');
-        grid[sr][sc2]=null;
-        pendingFS+=FREE_SPIN_COUNT;
-        addLog('<span class="phase-tag tag-scatter">Scatter!</span>'+FREE_SPIN_COUNT+' free spins incoming \u2605','fs');
-      }
-      await sleep(600);
-    }
 
     // gravity + refill
     for(var col=0;col<NCOLS;col++){
@@ -596,24 +496,8 @@ async function runSpinLoop(){
     for(var rb=0;rb<ROWS;rb++)for(var cb=0;cb<NCOLS;cb++)renderCell(cellEl(rb,cb),grid[rb][cb],'new-in');
     await sleep(360);
   }
-  return pendingFS;
-}
 
-/* ── BASE GAME SPIN ───────────────────────────────────────── */
-async function doSpin(){
-  if(spinning||balance<bet)return;
-  spinning=true;setControls(true);
-  balance-=bet;document.getElementById('s-balance').textContent=balance;
-  document.getElementById('s-win').textContent='--';
-  document.getElementById('s-casc').textContent='--';
-  spinPay=0;spinMult=1;cascCount=0;prismCount=0;
-  updateBars();document.getElementById('log').innerHTML='';
-  addLog('Spin started\u2026','info');
-  initGrid();buildGrid();await sleep(400);
-
-  var pendingFS=await runSpinLoop();
   clearArrows();
-
   var finalWin=Math.round(spinPay*spinMult);
   balance+=finalWin;
   document.getElementById('s-balance').textContent=balance;
@@ -624,74 +508,11 @@ async function doSpin(){
   } else {
     addLog('<span class="phase-tag tag-done">Done</span>No win this spin.','info');
   }
-
-  if(pendingFS>0){
-    await sleep(500);
-    await runFreeSpins(pendingFS);
-  } else {
-    spinning=false;setControls(false);
-  }
-}
-
-/* ── BUY FREE SPINS ───────────────────────────────────────── */
-async function buyFreeSpins(){
-  if(spinning||inFreeSpin)return;
-  if(balance<FREE_SPIN_BUY_COST){
-    addLog('Not enough balance (need '+FREE_SPIN_BUY_COST+' coins).','info');return;
-  }
-  balance-=FREE_SPIN_BUY_COST;
-  document.getElementById('s-balance').textContent=balance;
-  addLog('<span class="phase-tag tag-scatter">Bought!</span>'+FREE_SPIN_COUNT+' free spins for '+FREE_SPIN_BUY_COST+' coins','fs');
-  spinning=true;setControls(true);
-  await sleep(400);
-  await runFreeSpins(FREE_SPIN_COUNT);
-}
-
-/* ── FREE SPIN AUTO-PLAY ──────────────────────────────────── */
-async function runFreeSpins(count){
-  inFreeSpin=true;
-  freeSpinsLeft=count;
-  globalMult=1;
-  fsTotalWin=0;
-  updateFSUI();updateBars();
-  addLog('<span class="phase-tag tag-scatter">Free spins!</span>'+count+' auto spins \u00B7 global mult stacks forever','fs');
-  await sleep(500);
-
-  while(freeSpinsLeft>0){
-    freeSpinsLeft--;
-    updateFSBanner();
-    spinPay=0;cascCount=0;prismCount=0;
-    updateBars();
-    addLog('<span class="phase-tag tag-scatter">Auto spin</span>'+(count-freeSpinsLeft)+'/'+count+' \u00B7 mult now: '+globalMult+'\u00D7','fs');
-    initGrid();buildGrid();await sleep(400);
-
-    // free spin loop — pendingFS from scatter in free spin adds more spins
-    var extraFS=await runSpinLoop();
-    if(extraFS>0)freeSpinsLeft+=extraFS;
-
-    clearArrows();
-    var spinWin=Math.round(spinPay*globalMult);
-    fsTotalWin+=spinWin;
-    balance+=spinWin;
-    document.getElementById('s-balance').textContent=balance;
-    document.getElementById('s-win').textContent=spinWin||0;
-    updateFSBanner();updateBars();
-    if(spinWin>0){
-      addLog('<span class="phase-tag tag-scatter">Spin win</span>'+spinPay+' \u00D7 '+globalMult+' = '+spinWin+' coins','fs');
-    }
-    await sleep(500);
-  }
-
-  inFreeSpin=false;updateFSUI();
-  addLog('<span class="phase-tag tag-done">Free spins end</span>Total: '+fsTotalWin+' coins \u00B7 max mult reached: '+globalMult+'\u00D7','great');
-  document.getElementById('s-win').textContent=fsTotalWin;
-  spinPay=0;spinMult=1;updateBars();
   spinning=false;setControls(false);
 }
 
 /* ── BET ──────────────────────────────────────────────────── */
 function changeBet(d){
-  if(inFreeSpin)return;
   bet=Math.max(5,Math.min(100,bet+d));
   document.getElementById('s-bet').textContent=bet;
   document.getElementById('btn-spin').textContent='Spin ('+bet+')';
