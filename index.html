@@ -255,36 +255,29 @@ function updatePayTable(){
   }
 }
 
-/* ── TRANSFER — TWO-COLLECTOR COMPONENT ALGORITHM ────────────
-   For each connected same-colour component:
-   - If total petals >= 2×MAX: elect TWO collectors
-       RIGHT collector (full dissolve target):
-         Rule 1: most petals, Rule 2: most degree,
-         Rule 3: bottommost, Rule 4: rightmost
-       LEFT collector (empty dissolve / leftover target):
-         Same rules but Rule 4: LEFTMOST column
-   - If total petals >= MAX: elect ONE collector (right rules)
-   - Else: no transfers
-   Each non-collector routes toward its nearest collector (BFS).
-   Tie in distance → routes to right collector.
+/* ── TRANSFER — k+1 COLLECTOR ALGORITHM ─────────────────────
+   For each connected same-colour component with total petals T:
+     k = floor(T / MAX)       → number of full-dissolve collectors
+     additional = T mod MAX   → petals for remainder collector
+   Elect k collectors (full, rightmost tiebreak) + 1 remainder
+   collector (leftmost tiebreak) if additional > 0.
+   Each full collector targets MAX petals.
+   Remainder collector targets exactly `additional` petals.
+   Collectors with excess petals send overflow to nearest full collector.
+   Regular cells route to nearest collector still needing petals.
    Simultaneous copy-based, 1 petal per cell per pass.
 ─────────────────────────────────────────────────────────────── */
 
 var DIRS4=[[0,1],[1,0],[0,-1],[-1,0]];
 
 function findComponents(){
-  var visited={};
-  var components=[];
+  var visited={};var components=[];
   for(var r=0;r<ROWS;r++){
     for(var c=0;c<NCOLS;c++){
-      var key=r+','+c;
-      if(visited[key])continue;
+      var key=r+','+c;if(visited[key])continue;
       var s=grid[r][c];
       if(!s||s.p===0){visited[key]=true;continue;}
-      var colId=s.c.id;
-      var comp=[];
-      var q=[[r,c]];
-      visited[key]=true;
+      var colId=s.c.id,comp=[],q=[[r,c]];visited[key]=true;
       while(q.length){
         var cur=q.shift();comp.push(cur);
         for(var d=0;d<DIRS4.length;d++){
@@ -296,7 +289,7 @@ function findComponents(){
           visited[nkey]=true;q.push([nr,nc]);
         }
       }
-      components.push({cells:comp});
+      components.push(comp);
     }
   }
   return components;
@@ -304,48 +297,54 @@ function findComponents(){
 
 function getDegree(r,c,compSet){
   var deg=0;
-  for(var d=0;d<DIRS4.length;d++){
-    if(compSet[(r+DIRS4[d][0])+','+(c+DIRS4[d][1])])deg++;
-  }
+  for(var d=0;d<DIRS4.length;d++)if(compSet[(r+DIRS4[d][0])+','+(c+DIRS4[d][1])])deg++;
   return deg;
 }
 
-function electRight(comp,compSet){
-  // Rule 1: most petals, Rule 2: most degree, Rule 3: bottommost, Rule 4: rightmost
-  var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
-  for(var i=0;i<comp.length;i++){
-    var r=comp[i][0],c=comp[i][1],p=grid[r][c].p,deg=getDegree(r,c,compSet);
-    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
-      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+function electCollectors(comp,compSet,k,additional){
+  // elect k full collectors (rightmost tiebreak) then 1 remainder (leftmost tiebreak)
+  var excl={};var fullCols=[];
+  for(var ki=0;ki<k;ki++){
+    var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
+    for(var i=0;i<comp.length;i++){
+      var r=comp[i][0],c=comp[i][1];
+      if(excl[r+','+c])continue;
+      var p=grid[r][c].p,deg=getDegree(r,c,compSet);
+      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
+        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+      }
     }
+    if(best){fullCols.push(best);excl[best[0]+','+best[1]]=true;}
   }
-  return best;
-}
-
-function electLeft(comp,compSet,exclude){
-  // Rule 1: most petals, Rule 2: most degree, Rule 3: bottommost, Rule 4: LEFTMOST
-  var best=null,bP=-1,bD=-1,bR=-1,bC=999;
-  for(var i=0;i<comp.length;i++){
-    var r=comp[i][0],c=comp[i][1];
-    if(exclude&&r===exclude[0]&&c===exclude[1])continue;
-    var p=grid[r][c].p,deg=getDegree(r,c,compSet);
-    if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
-      best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+  var remCol=null;
+  if(additional>0){
+    var best=null,bP=-1,bD=-1,bR=-1,bC=9999;
+    for(var i=0;i<comp.length;i++){
+      var r=comp[i][0],c=comp[i][1];
+      if(excl[r+','+c])continue;
+      var p=grid[r][c].p,deg=getDegree(r,c,compSet);
+      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
+        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+      }
     }
+    remCol=best;
   }
-  return best;
+  // build targets map: collector key → target petal count
+  var targets={};
+  for(var i=0;i<fullCols.length;i++)targets[fullCols[i][0]+','+fullCols[i][1]]=MAX;
+  if(remCol)targets[remCol[0]+','+remCol[1]]=additional;
+  return{fullCols:fullCols,remCol:remCol,targets:targets};
 }
 
 function bfsDist(startR,startC,compSet){
-  var dist={};var startKey=startR+','+startC;dist[startKey]=0;
-  var q=[[startR,startC]];
+  var dist={};var sk=startR+','+startC;dist[sk]=0;var q=[[startR,startC]];
   while(q.length){
     var cur=q.shift();
     for(var d=0;d<DIRS4.length;d++){
       var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
-      var nkey=nr+','+nc;
-      if(!compSet[nkey]||dist.hasOwnProperty(nkey))continue;
-      dist[nkey]=dist[cur[0]+','+cur[1]]+1;q.push([nr,nc]);
+      var nk=nr+','+nc;
+      if(!compSet[nk]||dist.hasOwnProperty(nk))continue;
+      dist[nk]=dist[cur[0]+','+cur[1]]+1;q.push([nr,nc]);
     }
   }
   return dist;
@@ -353,24 +352,22 @@ function bfsDist(startR,startC,compSet){
 
 function bfsNextStep(fromR,fromC,toR,toC,compSet){
   if(fromR===toR&&fromC===toC)return null;
-  var prev={};var startKey=fromR+','+fromC;var targetKey=toR+','+toC;
-  prev[startKey]=null;var q=[[fromR,fromC]];var found=false;
+  var prev={};var sk=fromR+','+fromC,tk=toR+','+toC;
+  prev[sk]=null;var q=[[fromR,fromC]];var found=false;
   outer:while(q.length){
     var cur=q.shift();
     for(var d=0;d<DIRS4.length;d++){
       var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
-      var nkey=nr+','+nc;
-      if(!compSet[nkey]||prev.hasOwnProperty(nkey))continue;
-      prev[nkey]=[cur[0],cur[1]];
-      if(nkey===targetKey){found=true;break outer;}
+      var nk=nr+','+nc;
+      if(!compSet[nk]||prev.hasOwnProperty(nk))continue;
+      prev[nk]=[cur[0],cur[1]];
+      if(nk===tk){found=true;break outer;}
       q.push([nr,nc]);
     }
   }
   if(!found)return null;
-  var node=[toR,toC],nodeKey=targetKey;
-  while(prev[nodeKey]&&(prev[nodeKey][0]!==fromR||prev[nodeKey][1]!==fromC)){
-    node=prev[nodeKey];nodeKey=node[0]+','+node[1];
-  }
+  var node=[toR,toC],nk=tk;
+  while(prev[nk]&&(prev[nk][0]!==fromR||prev[nk][1]!==fromC)){node=prev[nk];nk=node[0]+','+node[1];}
   return node;
 }
 
@@ -380,40 +377,74 @@ function doTransferPass(){
   var components=findComponents();
 
   for(var ci=0;ci<components.length;ci++){
-    var comp=components[ci].cells;
+    var comp=components[ci];
     if(comp.length<2)continue;
     var compSet={};
     for(var i=0;i<comp.length;i++)compSet[comp[i][0]+','+comp[i][1]]=true;
     var total=0;
     for(var i=0;i<comp.length;i++)total+=grid[comp[i][0]][comp[i][1]].p;
-    var rightCol=electRight(comp,compSet);
-    var leftCol=(total>=2*MAX)?electLeft(comp,compSet,rightCol):null;
 
-    var distRight=bfsDist(rightCol[0],rightCol[1],compSet);
-    var distLeft=leftCol?bfsDist(leftCol[0],leftCol[1],compSet):null;
+    var k=Math.floor(total/MAX);
+    var additional=total%MAX;
+    var res=electCollectors(comp,compSet,k,additional);
+    var fullCols=res.fullCols,remCol=res.remCol,targets=res.targets;
+
+    // build distance maps for all collectors
+    var distMaps={};
+    for(var i=0;i<fullCols.length;i++){
+      var fc=fullCols[i];
+      distMaps[fc[0]+','+fc[1]]=bfsDist(fc[0],fc[1],compSet);
+    }
+    if(remCol)distMaps[remCol[0]+','+remCol[1]]=bfsDist(remCol[0],remCol[1],compSet);
 
     for(var i=0;i<comp.length;i++){
-      var r=comp[i][0],c=comp[i][1];
-      if(grid[r][c].p===0)continue;
-      var isRight=r===rightCol[0]&&c===rightCol[1];
-      var isLeft=leftCol&&r===leftCol[0]&&c===leftCol[1];
-      if(isRight||isLeft)continue;
+      var r=comp[i][0],cv=comp[i][1];
+      if(grid[r][cv].p===0)continue;
+      var cellKey=r+','+cv;
+      var myTarget=targets.hasOwnProperty(cellKey)?targets[cellKey]:null;
 
-      // choose nearest collector; tie → right
-      var target=rightCol;
-      if(leftCol){
-        var dR=distRight[r+','+c]||999;
-        var dL=distLeft[r+','+c]||999;
-        if(dL<dR)target=leftCol;
+      if(myTarget!==null){
+        // this cell is a collector
+        var curP=next[r][cv].p;
+        if(curP<=myTarget)continue; // at/below target — don't send
+        // has excess — send to nearest full collector with capacity
+        var bestFC=null,bestD=999;
+        for(var fi=0;fi<fullCols.length;fi++){
+          var fc=fullCols[fi];
+          if(fc[0]===r&&fc[1]===cv)continue;
+          if(next[fc[0]][fc[1]].p>=MAX)continue;
+          var fk=fc[0]+','+fc[1];
+          var d=(distMaps[fk]||{})[cellKey]||999;
+          if(d<bestD){bestD=d;bestFC=fc;}
+        }
+        if(!bestFC)continue;
+        var nxt=bfsNextStep(r,cv,bestFC[0],bestFC[1],compSet);
+        if(!nxt)continue;
+        var nr=nxt[0],nc=nxt[1];
+        if(next[nr][nc].p>=MAX)continue;
+        next[r][cv].p-=1;next[nr][nc].p+=1;
+        transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
+      } else {
+        // regular feeder — route to nearest collector still needing petals
+        var bestT=null,bestD=999;
+        var tkeys=Object.keys(targets);
+        for(var ti=0;ti<tkeys.length;ti++){
+          var tk2=tkeys[ti];
+          var tparts=tk2.split(',');
+          var tr2=parseInt(tparts[0]),tc2=parseInt(tparts[1]);
+          if(next[tr2][tc2].p>=targets[tk2])continue;
+          var d=(distMaps[tk2]||{})[cellKey]||999;
+          if(d<bestD){bestD=d;bestT=[tr2,tc2];}
+        }
+        if(!bestT)continue;
+        var tr=bestT[0],tc=bestT[1];
+        var nxt=bfsNextStep(r,cv,tr,tc,compSet);
+        if(!nxt)continue;
+        var nr=nxt[0],nc=nxt[1];
+        if(next[nr][nc].p>=MAX)continue;
+        next[r][cv].p-=1;next[nr][nc].p+=1;
+        transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
       }
-      var tr=target[0],tc=target[1];
-      if(next[tr][tc].p>=MAX)continue;
-      var nxt=bfsNextStep(r,c,tr,tc,compSet);
-      if(!nxt)continue;
-      var nr=nxt[0],nc=nxt[1];
-      if(next[nr][nc].p>=MAX)continue;
-      next[r][c].p-=1;next[nr][nc].p+=1;
-      transfers.push([r,c,nr,nc,grid[r][c].c.hex]);
     }
   }
   if(!transfers.length)return{changed:false,transfers:[]};
