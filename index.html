@@ -474,10 +474,15 @@ async function doSpin(){
   addLog('Spin started\u2026','info');
   initGrid();buildGrid();await sleep(400);
 
+  // Phase 1: run ALL transfers to full completion first
+  // Phase 2: dissolves + gravity
+  // These two phases never interleave — transfers always finish before cascade
   var safety=0;
   while(safety++<120){
+
+    // ── PHASE 1: transfer until fully stable ──────────────────
     var passes=0;
-    while(passes++<50){
+    while(passes++<200){
       var result=doTransferPass();
       if(!result.changed)break;
       drawArrows(result.transfers);
@@ -491,6 +496,7 @@ async function doSpin(){
       await sleep(280);clearArrows();await sleep(50);
     }
 
+    // ── PHASE 2: dissolves ────────────────────────────────────
     var dissolves=findDissolves();
     if(!dissolves.length)break;
     cascCount++;
@@ -514,7 +520,7 @@ async function doSpin(){
     }
     updateBars();await sleep(420);
 
-    // gravity + refill
+    // ── PHASE 3: gravity + refill ─────────────────────────────
     for(var col=0;col<NCOLS;col++){
       var wr=ROWS-1;
       for(var row=ROWS-1;row>=0;row--){if(grid[row][col]){if(wr!==row){grid[wr][col]=grid[row][col];grid[row][col]=null;}wr--;}}
