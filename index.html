@@ -222,9 +222,23 @@ function drawArrows(transfers){
     var line=document.createElementNS('http://www.w3.org/2000/svg','line');
     line.setAttribute('x1',f.x+dx/len*pad);line.setAttribute('y1',f.y+dy/len*pad);
     line.setAttribute('x2',to.x-dx/len*(pad+3));line.setAttribute('y2',to.y-dy/len*(pad+3));
-    line.setAttribute('stroke',t[4]);line.setAttribute('stroke-width','3');
+    line.setAttribute('stroke',t[4]);
+    // thicker lines for larger transfers
+    var amt=t[5]||1;
+    line.setAttribute('stroke-width',Math.min(6,2+amt));
     line.setAttribute('stroke-linecap','round');line.setAttribute('opacity','0.92');
     line.setAttribute('marker-end','url(#mh)');svg.appendChild(line);
+    // label with amount if > 1
+    if(amt>1){
+      var mx=(f.x+to.x)/2,my=(f.y+to.y)/2;
+      var txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',mx);txt.setAttribute('y',my-4);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('fill','#fff');txt.setAttribute('stroke',t[4]);
+      txt.setAttribute('stroke-width','3');txt.setAttribute('paint-order','stroke');
+      txt.setAttribute('font-size','11');txt.setAttribute('font-weight','700');
+      txt.textContent='+'+amt;svg.appendChild(txt);
+    }
   }
 }
 function clearArrows(){document.getElementById('asvg').innerHTML='';}
@@ -255,18 +269,25 @@ function updatePayTable(){
   }
 }
 
-/* ── TRANSFER — OPTION C: SEQUENTIAL FLOW-AWARE ELECTION ─────
-   Election is sequential — one collector at a time:
-   1. Pick best candidate (most petals → degree → bottommost → rightmost)
-   2. Run simulateFlowTo() — virtual passes to count petals that actually
-      reach this candidate given the current topology
-   3. If filled >= MAX → confirm as full collector, subtract consumed
-      petals from pool, repeat from step 1 with remaining pool
-   4. If can't fill → skip this candidate, try next best
-   5. After all full collectors found, elect remainder (leftmost tiebreak)
-   This prevents leaf/bottleneck nodes from blocking flow paths.
-   Routing unchanged: feeders → nearest collector, only MAX blocks transit.
-   p=0 cells stay in topology so chains survive mid-transfer draining.
+/* ── TRANSFER — WAVE-BASED FLOW (multi-petal, all directions, empty=locked) ────
+   Each call to doTransferPass() produces ONE WAVE — a set of simultaneous
+   multi-petal moves. Waves are visually distinct animation steps.
+   
+   Algorithm:
+   1. Plan the final state: Option C sequential election + proximity-based
+      consumption gives us the exact end state (full collectors, remainder, drains)
+   2. Compute net flows: each "source" cell has amount to send; each "sink" has
+      amount to receive. Assign sources to sinks via BFS (nearest, avoiding cells
+      that are DEAD = already at 0 and assigned to stay at 0).
+   3. Execute one wave: process cells in topological order (leaves first) so that
+      a parent receives from its child before sending onward. This allows
+      transit-through in a single wave.
+   
+   Rules enforced:
+   - A cell that reaches 0 is LOCKED — no petals can flow through it after.
+   - A cell that reaches MAX is LOCKED — no more petals can land on it.
+   - Petals flow in all 4 directions based on geometry.
+   - Multiple petals move per move (full stack where possible).
 ─────────────────────────────────────────────────────────────── */
 
 var DIRS4=[[0,1],[1,0],[0,-1],[-1,0]];
@@ -296,28 +317,23 @@ function findComponents(){
   return components;
 }
 
-function getDegree(r,c,compSet){
-  var deg=0;
-  for(var d=0;d<DIRS4.length;d++)if(compSet[(r+DIRS4[d][0])+','+(c+DIRS4[d][1])])deg++;
-  return deg;
-}
-
-function bfsDist(startR,startC,compSet){
+function bfsDistFrom(startR,startC,compSet,avoidSet){
   var dist={};var sk=startR+','+startC;dist[sk]=0;var q=[[startR,startC]];
   while(q.length){
-    var cur=q.shift();
+    var cur=q.shift();var ck=cur[0]+','+cur[1];
     for(var d=0;d<DIRS4.length;d++){
       var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
       var nk=nr+','+nc;
       if(!compSet[nk]||dist.hasOwnProperty(nk))continue;
-      dist[nk]=dist[cur[0]+','+cur[1]]+1;q.push([nr,nc]);
+      if(avoidSet&&avoidSet[nk])continue; // skip dead cells as relays
+      dist[nk]=dist[ck]+1;q.push([nr,nc]);
     }
   }
   return dist;
 }
 
-function bfsNextStep(fromR,fromC,toR,toC,compSet){
-  if(fromR===toR&&fromC===toC)return null;
+function bfsPath(fromR,fromC,toR,toC,compSet,avoidSet){
+  if(fromR===toR&&fromC===toC)return [];
   var prev={};var sk=fromR+','+fromC,tk=toR+','+toC;
   prev[sk]=null;var q=[[fromR,fromC]];var found=false;
   outer:while(q.length){
@@ -326,213 +342,357 @@ function bfsNextStep(fromR,fromC,toR,toC,compSet){
       var nr=cur[0]+DIRS4[d][0],nc=cur[1]+DIRS4[d][1];
       var nk=nr+','+nc;
       if(!compSet[nk]||prev.hasOwnProperty(nk))continue;
+      if(nk!==tk&&avoidSet&&avoidSet[nk])continue;
       prev[nk]=[cur[0],cur[1]];
       if(nk===tk){found=true;break outer;}
       q.push([nr,nc]);
     }
   }
   if(!found)return null;
-  var node=[toR,toC],nk=tk;
-  while(prev[nk]&&(prev[nk][0]!==fromR||prev[nk][1]!==fromC)){node=prev[nk];nk=node[0]+','+node[1];}
-  return node;
+  var path=[];var node=[toR,toC],nk=tk;
+  while(prev[nk]){path.unshift(node);node=prev[nk];nk=node[0]+','+node[1];}
+  return path;
 }
 
-/* Virtual transfer simulation toward a single sink.
-   Uses petalMap (key="r,c" → count), does NOT touch grid.
-   Returns the resulting petal map after routing everything toward sink. */
-function simulateFlowTo(sinkR,sinkC,compSet,petalMap){
+function getDegree(r,c,compSet){
+  var d=0;
+  for(var i=0;i<DIRS4.length;i++)if(compSet[(r+DIRS4[i][0])+','+(c+DIRS4[i][1])])d++;
+  return d;
+}
+
+/* Plan the final state for a component using Option C election */
+function planFinalState(comp,compSet){
+  // initial petals
   var p={};
-  var ks=Object.keys(petalMap);
-  for(var i=0;i<ks.length;i++)p[ks[i]]=petalMap[ks[i]];
-  var sk=sinkR+','+sinkC;
-  for(var pass=0;pass<60;pass++){
-    var moved=false;
-    var np={};
-    for(var i=0;i<ks.length;i++)np[ks[i]]=p[ks[i]];
-    for(var i=0;i<ks.length;i++){
-      var ck=ks[i];
-      if(p[ck]<=0||ck===sk)continue;
-      var cp=ck.split(',');
-      var nxt=bfsNextStep(parseInt(cp[0]),parseInt(cp[1]),sinkR,sinkC,compSet);
-      if(!nxt)continue;
-      var nk=nxt[0]+','+nxt[1];
-      if((np[nk]||0)>=MAX)continue;
-      np[ck]-=1;np[nk]=(np[nk]||0)+1;moved=true;
-    }
-    p=np;
-    if((p[sk]||0)>=MAX||!moved)break;
-  }
-  return p;
-}
-
-/* Option C sequential election.
-   Returns targets: object keyed "r,c" → target petal count.
-   Also returns fullCols array for routing preference. */
-function electCollectorsSeq(comp,compSet){
-  // build petalMap from current grid
-  var petalMap={};
   for(var i=0;i<comp.length;i++){
     var r=comp[i][0],c=comp[i][1],s=grid[r][c];
-    petalMap[r+','+c]=(s&&s.p>0)?s.p:0;
+    p[r+','+c]=(s&&s.p>0)?s.p:0;
   }
-
-  var targets={};
+  
   var fullCols=[];
   var excl={};
-
-  // keep electing full collectors while enough petals remain
+  
+  // elect full collectors sequentially with proximity-based consumption
   for(var round=0;round<comp.length;round++){
-    // count remaining petals
+    // count remaining
     var remaining=0;
     for(var i=0;i<comp.length;i++){
       var ck=comp[i][0]+','+comp[i][1];
-      if(!excl[ck])remaining+=(petalMap[ck]||0);
+      if(!excl[ck])remaining+=(p[ck]||0);
     }
     if(remaining<MAX)break;
-
-    // pick best candidate not yet excluded
+    
+    // pick best candidate (most petals → degree → bottom → right)
     var best=null,bP=-1,bD=-1,bR=-1,bC=-1;
     for(var i=0;i<comp.length;i++){
       var r=comp[i][0],c=comp[i][1],ck=r+','+c;
       if(excl[ck])continue;
-      var p=petalMap[ck]||0;
-      if(p<=0)continue;
+      var pv=p[ck]||0;
+      if(pv<=0)continue;
       var deg=getDegree(r,c,compSet);
-      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c>bC)){
-        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+      if(pv>bP||(pv===bP&&deg>bD)||(pv===bP&&deg===bD&&r>bR)||(pv===bP&&deg===bD&&r===bR&&c>bC)){
+        best=comp[i];bP=pv;bD=deg;bR=r;bC=c;
       }
     }
     if(!best)break;
-
-    // simulate flow toward this candidate
-    var afterFlow=simulateFlowTo(best[0],best[1],compSet,petalMap);
-    var filled=afterFlow[best[0]+','+best[1]]||0;
-
-    if(filled>=MAX){
-      // confirmed — this candidate can actually be filled
-      targets[best[0]+','+best[1]]=MAX;
+    
+    var bk=best[0]+','+best[1];
+    var need=MAX-p[bk];
+    if(need<=0){
+      fullCols.push(best);excl[bk]=true;p[bk]=0;
+      continue;
+    }
+    
+    // proximity consumption: from cells closest to best, drain petals
+    var dists=bfsDistFrom(best[0],best[1],compSet,null);
+    var sortedCells=[];
+    for(var i=0;i<comp.length;i++){
+      var ck2=comp[i][0]+','+comp[i][1];
+      if(ck2===bk)continue;
+      if(!dists.hasOwnProperty(ck2))continue;
+      sortedCells.push({cell:comp[i],key:ck2,d:dists[ck2]});
+    }
+    sortedCells.sort(function(a,b){return a.d-b.d;});
+    
+    var consumed=0;
+    var tentative_p=Object.assign({},p);
+    for(var si=0;si<sortedCells.length;si++){
+      if(consumed>=need)break;
+      var sc=sortedCells[si];
+      var avail=tentative_p[sc.key]||0;
+      var take=Math.min(avail,need-consumed);
+      if(take>0){tentative_p[sc.key]-=take;consumed+=take;}
+    }
+    
+    if(consumed>=need){
+      // confirmed
       fullCols.push(best);
-      excl[best[0]+','+best[1]]=true;
-      // update petalMap to reflect petals consumed routing to this collector
-      var ks=Object.keys(afterFlow);
-      for(var ki=0;ki<ks.length;ki++)petalMap[ks[ki]]=afterFlow[ks[ki]];
-      petalMap[best[0]+','+best[1]]=0; // collector consumed
+      excl[bk]=true;
+      p=tentative_p;
+      p[bk]=0; // collector's petals are consumed by dissolve
     } else {
-      // can't fill this candidate — exclude and try next
-      excl[best[0]+','+best[1]]=true;
+      // cannot fill
+      excl[bk]=true;
     }
   }
-
-  // elect remainder collector from what's left (leftmost tiebreak)
+  
+  // elect remainder (leftmost tiebreak)
   var remTotal=0;
   for(var i=0;i<comp.length;i++){
     var ck=comp[i][0]+','+comp[i][1];
-    if(!excl[ck])remTotal+=(petalMap[ck]||0);
+    if(!excl[ck])remTotal+=(p[ck]||0);
   }
+  
+  var remCell=null;
   if(remTotal>0){
     var best=null,bP=-1,bD=-1,bR=-1,bC=9999;
     for(var i=0;i<comp.length;i++){
       var r=comp[i][0],c=comp[i][1],ck=r+','+c;
       if(excl[ck])continue;
-      var p=petalMap[ck]||0;
-      if(p<=0)continue;
+      var pv=p[ck]||0;
+      if(pv<=0)continue;
       var deg=getDegree(r,c,compSet);
-      if(p>bP||(p===bP&&deg>bD)||(p===bP&&deg===bD&&r>bR)||(p===bP&&deg===bD&&r===bR&&c<bC)){
-        best=comp[i];bP=p;bD=deg;bR=r;bC=c;
+      if(pv>bP||(pv===bP&&deg>bD)||(pv===bP&&deg===bD&&r>bR)||(pv===bP&&deg===bD&&r===bR&&c<bC)){
+        best=comp[i];bP=pv;bD=deg;bR=r;bC=c;
       }
     }
-    if(best)targets[best[0]+','+best[1]]=remTotal;
+    remCell=best;
   }
+  
+  // build final state
+  var final={};
+  for(var i=0;i<comp.length;i++){
+    var ck=comp[i][0]+','+comp[i][1];
+    final[ck]=0;
+  }
+  for(var i=0;i<fullCols.length;i++)final[fullCols[i][0]+','+fullCols[i][1]]=MAX;
+  if(remCell)final[remCell[0]+','+remCell[1]]=remTotal;
+  
+  return {final:final,fullCols:fullCols,remCell:remCell};
+}
 
-  return{targets:targets,fullCols:fullCols};
+/* Generate one wave of moves for a component.
+   Returns {moves:[...], newGrid} or null if no moves needed. */
+function planOneWave(comp,compSet,finalState){
+  // compute net flows from current grid state to final state
+  var curP={};
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1],s=grid[r][c];
+    curP[r+','+c]=(s&&s.p>0)?s.p:0;
+  }
+  
+  // if already at final state, no moves needed
+  var needMove=false;
+  for(var k in finalState)if(finalState.hasOwnProperty(k)){
+    if((curP[k]||0)!==finalState[k]){needMove=true;break;}
+  }
+  if(!needMove)return null;
+  
+  // dead cells = cells whose final is 0 AND whose current is already 0
+  // these cannot be used as relays (empty stays empty)
+  var deadCells={};
+  for(var i=0;i<comp.length;i++){
+    var ck=comp[i][0]+','+comp[i][1];
+    if((curP[ck]||0)===0 && (finalState[ck]||0)===0){
+      deadCells[ck]=true;
+    }
+  }
+  
+  // full cells = cells at MAX currently (locked, cannot receive)
+  var fullCells={};
+  for(var i=0;i<comp.length;i++){
+    var ck=comp[i][0]+','+comp[i][1];
+    if((curP[ck]||0)>=MAX)fullCells[ck]=true;
+  }
+  
+  // sources = cells with curP > finalState (need to drain)
+  // sinks = cells with curP < finalState (need to receive)
+  var sources=[], sinks=[];
+  for(var i=0;i<comp.length;i++){
+    var r=comp[i][0],c=comp[i][1],ck=r+','+c;
+    var diff=(curP[ck]||0)-(finalState[ck]||0);
+    if(diff>0)sources.push({cell:comp[i],key:ck,amount:diff});
+    else if(diff<0)sinks.push({cell:comp[i],key:ck,capacity:-diff});
+  }
+  if(sources.length===0||sinks.length===0)return null;
+  
+  // assignments: each source unit → a sink
+  // for each source, find shortest path to nearest sink with capacity
+  // (avoid dead cells and full cells as relays)
+  var sinkCapLeft={};
+  for(var i=0;i<sinks.length;i++)sinkCapLeft[sinks[i].key]=sinks[i].capacity;
+  
+  // list of flows to execute: (source, next_hop, amount)
+  // we'll build first-hop moves only, aggregating by (source, next_hop)
+  var hopFlows={}; // key="srcR,srcC|dstR,dstC" → amount
+  
+  // sort sources by: farthest from any sink first (so leaves send first)
+  // compute min dist to any sink for each source
+  var minDistToSink={};
+  for(var si=0;si<sources.length;si++){
+    var s=sources[si];
+    var avoid={};
+    for(var dk in deadCells)avoid[dk]=true;
+    for(var fk in fullCells)if(fk!==s.key)avoid[fk]=true;
+    var best=9999;
+    for(var ti=0;ti<sinks.length;ti++){
+      var tk=sinks[ti].key;
+      if(tk===s.key)continue;
+      var tp=tk.split(',');
+      var tr=parseInt(tp[0]),tc=parseInt(tp[1]);
+      var d=bfsDistFrom(s.cell[0],s.cell[1],compSet,avoid)[tk];
+      if(d!==undefined&&d<best)best=d;
+    }
+    minDistToSink[s.key]=best;
+  }
+  sources.sort(function(a,b){return (minDistToSink[b.key]||0)-(minDistToSink[a.key]||0);});
+  
+  // for each source, route its amount to nearest available sink
+  for(var si=0;si<sources.length;si++){
+    var s=sources[si];
+    var toSend=s.amount;
+    while(toSend>0){
+      // find nearest sink with capacity
+      var avoid={};
+      for(var dk in deadCells)avoid[dk]=true;
+      for(var fk in fullCells)if(fk!==s.key)avoid[fk]=true;
+      
+      var bestSink=null,bestPath=null,bestD=9999;
+      for(var ti=0;ti<sinks.length;ti++){
+        var sk=sinks[ti];
+        if(sk.key===s.key)continue;
+        if((sinkCapLeft[sk.key]||0)<=0)continue;
+        var path=bfsPath(s.cell[0],s.cell[1],sk.cell[0],sk.cell[1],compSet,avoid);
+        if(!path)continue;
+        if(path.length<bestD){bestD=path.length;bestSink=sk;bestPath=path;}
+      }
+      if(!bestSink)break;
+      
+      var amt=Math.min(toSend,sinkCapLeft[bestSink.key]);
+      // first hop: cell → path[0]
+      var nextHop=bestPath[0];
+      var hopKey=s.key+'|'+nextHop[0]+','+nextHop[1];
+      hopFlows[hopKey]=(hopFlows[hopKey]||0)+amt;
+      sinkCapLeft[bestSink.key]-=amt;
+      toSend-=amt;
+    }
+  }
+  
+  // now EXECUTE hops in topological order so parents receive before sending further
+  // actually simpler: just execute all the recorded hops, then separately account for
+  // relays passing petals further. But hopFlows only captures FIRST hop.
+  //
+  // Better approach: for each hop flow, we're recording (source, next_hop, amount).
+  // But next_hop may itself need to forward. Instead of tracking that here,
+  // let's do a proper simulation: each "source" sends its stack toward its assigned sink,
+  // going hop by hop until reaching destination. All hops happen in this wave.
+  
+  // Reset: let's rebuild as a cleaner algorithm.
+  // For each source → sink pair and amount, execute the full path in one wave:
+  //   (source → path[0] → path[1] → ... → sink), each hop moves `amount` petals.
+  // But when a cell is both a source and a relay, its own petals go first, then incoming.
+  
+  // Simpler model: compute ALL flows per edge (from→to) across all assignments.
+  // Each edge accumulates the total petals flowing across it this wave.
+  // Result: list of (from, to, amount) edges.
+  
+  var edgeFlows={}; // key="fR,fC|tR,tC" → amount
+  
+  // reset sink capacity
+  sinkCapLeft={};
+  for(var i=0;i<sinks.length;i++)sinkCapLeft[sinks[i].key]=sinks[i].capacity;
+  
+  for(var si=0;si<sources.length;si++){
+    var s=sources[si];
+    var toSend=s.amount;
+    while(toSend>0){
+      var avoid={};
+      for(var dk in deadCells)avoid[dk]=true;
+      for(var fk in fullCells)if(fk!==s.key)avoid[fk]=true;
+      
+      var bestSink=null,bestPath=null,bestD=9999;
+      for(var ti=0;ti<sinks.length;ti++){
+        var sk=sinks[ti];
+        if(sk.key===s.key)continue;
+        if((sinkCapLeft[sk.key]||0)<=0)continue;
+        var path=bfsPath(s.cell[0],s.cell[1],sk.cell[0],sk.cell[1],compSet,avoid);
+        if(!path)continue;
+        if(path.length<bestD){bestD=path.length;bestSink=sk;bestPath=path;}
+      }
+      if(!bestSink)break;
+      
+      var amt=Math.min(toSend,sinkCapLeft[bestSink.key]);
+      
+      // record edge flows along the path
+      var from=[s.cell[0],s.cell[1]];
+      for(var pi=0;pi<bestPath.length;pi++){
+        var to=bestPath[pi];
+        var ek=from[0]+','+from[1]+'|'+to[0]+','+to[1];
+        edgeFlows[ek]=(edgeFlows[ek]||0)+amt;
+        from=to;
+      }
+      
+      sinkCapLeft[bestSink.key]-=amt;
+      toSend-=amt;
+    }
+  }
+  
+  // convert edgeFlows to moves list
+  var moves=[];
+  for(var ek in edgeFlows){
+    var parts=ek.split('|');
+    var fp=parts[0].split(','),tp=parts[1].split(',');
+    moves.push([parseInt(fp[0]),parseInt(fp[1]),parseInt(tp[0]),parseInt(tp[1]),edgeFlows[ek]]);
+  }
+  
+  return moves.length>0?{moves:moves}:null;
 }
 
 function doTransferPass(){
-  var next=grid.map(function(row){return row.map(function(s){return s?{c:s.c,p:s.p}:null;});});
   var transfers=[];
   var components=findComponents();
-
+  var anyMoved=false;
+  
+  // snapshot of grid for reading
+  var next=grid.map(function(row){return row.map(function(s){return s?{c:s.c,p:s.p}:null;});});
+  
   for(var ci=0;ci<components.length;ci++){
     var comp=components[ci];
+    if(comp.length<2)continue;
     var compSet={};
     for(var i=0;i<comp.length;i++)compSet[comp[i][0]+','+comp[i][1]]=true;
-
+    
+    // total petals check
     var total=0;
     for(var i=0;i<comp.length;i++){
       var s=grid[comp[i][0]][comp[i][1]];
       if(s&&s.p>0)total+=s.p;
     }
     if(total===0)continue;
-
-    // Option C sequential election
-    var res=electCollectorsSeq(comp,compSet);
-    var targets=res.targets,fullCols=res.fullCols;
-    var tkeys=Object.keys(targets);
-    if(tkeys.length===0)continue;
-
-    // mark which targets are full collectors (for routing preference)
-    var isFullCol={};
-    for(var fi=0;fi<fullCols.length;fi++)isFullCol[fullCols[fi][0]+','+fullCols[fi][1]]=true;
-
-    // build distance maps from each collector
-    var distMaps={};
-    for(var ti=0;ti<tkeys.length;ti++){
-      var tk=tkeys[ti],tp=tk.split(',');
-      distMaps[tk]=bfsDist(parseInt(tp[0]),parseInt(tp[1]),compSet);
-    }
-
-    // route petals — all cells including p=0 relays
-    for(var i=0;i<comp.length;i++){
-      var r=comp[i][0],cv=comp[i][1];
-      if(next[r][cv]===null||next[r][cv].p<=0)continue;
-      var cellKey=r+','+cv;
-      var isCollector=targets.hasOwnProperty(cellKey);
-
-      if(isCollector){
-        // collector: send excess to nearest full collector
-        var myTgt=targets[cellKey];
-        if(next[r][cv].p<=myTgt)continue;
-        var bestFC=null,bestD=9999;
-        for(var fi=0;fi<fullCols.length;fi++){
-          var fc=fullCols[fi],fk=fc[0]+','+fc[1];
-          if(fk===cellKey)continue;
-          if(next[fc[0]][fc[1]]===null||next[fc[0]][fc[1]].p>=MAX)continue;
-          var d=(distMaps[fk]||{})[cellKey]||9999;
-          if(d<bestD){bestD=d;bestFC=fc;}
-        }
-        if(!bestFC)continue;
-        var nxt=bfsNextStep(r,cv,bestFC[0],bestFC[1],compSet);
-        if(!nxt)continue;
-        var nr=nxt[0],nc=nxt[1];
-        if(next[nr][nc]===null||next[nr][nc].p>=MAX)continue;
-        next[r][cv].p-=1;next[nr][nc].p+=1;
-        transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
-      } else {
-        // feeder: nearest collector with remaining capacity
-        var bestT=null,bestD=9999,bestIsFull=false;
-        for(var ti=0;ti<tkeys.length;ti++){
-          var tk=tkeys[ti],tp=tk.split(',');
-          var tr=parseInt(tp[0]),tc=parseInt(tp[1]);
-          var remaining=targets[tk]-(next[tr][tc]?next[tr][tc].p:0);
-          if(remaining<=0)continue;
-          var d=(distMaps[tk]||{})[cellKey]||9999;
-          var isFull=isFullCol.hasOwnProperty(tk);
-          if(d<bestD||(d===bestD&&isFull&&!bestIsFull)){
-            bestD=d;bestT=[tr,tc];bestIsFull=isFull;
-          }
-        }
-        if(!bestT)continue;
-        var nxt=bfsNextStep(r,cv,bestT[0],bestT[1],compSet);
-        if(!nxt)continue;
-        var nr=nxt[0],nc=nxt[1];
-        // only MAX blocks — allows transit through collector cells
-        if(next[nr][nc]===null||next[nr][nc].p>=MAX)continue;
-        next[r][cv].p-=1;next[nr][nc].p+=1;
-        transfers.push([r,cv,nr,nc,grid[r][cv].c.hex]);
+    
+    // plan final state
+    var plan=planFinalState(comp,compSet);
+    
+    // plan one wave
+    var wave=planOneWave(comp,compSet,plan.final);
+    if(!wave)continue;
+    
+    // apply moves to `next` grid
+    for(var mi=0;mi<wave.moves.length;mi++){
+      var m=wave.moves[mi];
+      var fr=m[0],fc=m[1],tr=m[2],tc=m[3],amt=m[4];
+      if(next[fr][fc]){
+        next[fr][fc].p-=amt;
       }
+      if(next[tr][tc]){
+        next[tr][tc].p+=amt;
+      }
+      transfers.push([fr,fc,tr,tc,grid[fr][fc].c.hex,amt]);
+      anyMoved=true;
     }
   }
-  if(!transfers.length)return{changed:false,transfers:[]};
+  
+  if(!anyMoved)return{changed:false,transfers:[]};
   grid=next;
   return{changed:true,transfers:transfers};
 }
@@ -578,7 +738,7 @@ async function doSpin(){
         if(fe){fe.classList.remove('sending','receiving');void fe.offsetWidth;fe.classList.add('sending');}
         if(te){te.classList.remove('sending','receiving');void te.offsetWidth;te.classList.add('receiving');}
       }
-      await sleep(280);clearArrows();await sleep(50);
+      await sleep(450);clearArrows();await sleep(80);
     }
 
     // ── PHASE 2: dissolves ────────────────────────────────────
