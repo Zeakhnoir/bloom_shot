@@ -967,6 +967,9 @@ function runTransfers(grid) {
   const passes = [];
   const MAX_WAVES = 200;
 
+  // ── Phase 1: regular wave-based transfers ───────────────────────────────
+  // Runs wave-based flow on every same-colour connected component until
+  // the whole regular grid is stable. WILDs sit still during this phase.
   for (let wave = 0; wave < MAX_WAVES; wave++) {
     const components = findComponents(next);
     const waveMoves = [];
@@ -974,7 +977,6 @@ function runTransfers(grid) {
     for (const comp of components) {
       if (comp.length < 2) continue;
 
-      // Plan final state & one wave toward it based on the CURRENT `next` grid.
       const { final, compSet } = planFinalState(comp, next);
       const current = {};
       for (const pos of comp) {
@@ -987,8 +989,6 @@ function runTransfers(grid) {
 
       const color = next[comp[0].r][comp[0].c].color;
 
-      // Apply edge flows to the working grid and expand into per-petal moves
-      // grouped by source (animator plays source-by-source).
       const bySource = {};
       for (const f of flows) {
         const sk = `${f.fromR},${f.fromC}`;
@@ -1016,6 +1016,76 @@ function runTransfers(grid) {
       moves:     waveMoves,
       gridAfter: cloneGrid(next),
       kind:      'regular',
+    });
+  }
+
+  // ── Phase 2: WILD outflow ────────────────────────────────────────────────
+  // After regular transfers settle, each WILD tries to send its petals to
+  // the closest grid-wide cell whose colour matches each petal. WILDs never
+  // receive. Each iteration picks the (petal, target) pair with smallest
+  // Manhattan distance; the petal flies there and leaves the WILD's stack.
+  // If a WILD gives away all its petals → petals reaches 0 → empty-dissolve.
+  // If a WILD cannot place a petal (no matching target with capacity)
+  // → it stops; whatever remains stays in the pot and acts like a normal
+  // symbol from the next cascade onward.
+  for (let wave = 0; wave < MAX_WAVES; wave++) {
+    const wildMoves = [];
+
+    for (let r = 0; r < GAME.ROWS; r++) {
+      for (let c = 0; c < GAME.COLS; c++) {
+        const cell = next[r][c];
+        if (!cell || !cell.wild) continue;
+        if (cell.petals <= 0) continue;
+
+        const colors = cell.petalColors || [];
+        let bestDist = Infinity;
+        let bestPetalIdx = -1;
+        let bestTarget = null;
+
+        for (let pi = 0; pi < colors.length; pi++) {
+          const wantColor = colors[pi];
+          for (let tr = 0; tr < GAME.ROWS; tr++) {
+            for (let tc = 0; tc < GAME.COLS; tc++) {
+              if (tr === r && tc === c) continue;
+              const target = next[tr][tc];
+              if (!target || target.wild) continue;
+              if (target.petals <= 0) continue;
+              if (target.color !== wantColor) continue;
+              if (target.petals >= GAME.MAX_PETALS) continue;
+              const dist = Math.abs(tr - r) + Math.abs(tc - c);
+              if (dist < bestDist) {
+                bestDist = dist;
+                bestPetalIdx = pi;
+                bestTarget = { r: tr, c: tc };
+              }
+            }
+          }
+        }
+
+        if (!bestTarget) continue;   // no valid target → this WILD stops
+
+        const sentColor = colors[bestPetalIdx];
+        cell.petalColors = colors.slice();
+        cell.petalColors.splice(bestPetalIdx, 1);
+        cell.petals -= 1;
+        next[bestTarget.r][bestTarget.c].petals += 1;
+
+        wildMoves.push({
+          from:   { r, c },
+          to:     bestTarget,
+          color:  sentColor,
+          wild:   true,
+          petalIndex: bestPetalIdx,
+        });
+      }
+    }
+
+    if (wildMoves.length === 0) break;
+    passes.push({
+      passIndex: passes.length,
+      moves:     wildMoves,
+      gridAfter: cloneGrid(next),
+      kind:      'wild',
     });
   }
 
