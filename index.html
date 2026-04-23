@@ -1384,32 +1384,30 @@ const HOOKS_ALT3 = {
     if (currentGridSize >= maxSz) return;
     const oldSize = currentGridSize;
     const newSize = currentGridSize + 1;
-
-    // Expand the grid and update the outer cascade-loop reference.
-    // We keep a LOCAL reference to the expanded grid too — mutating
-    // ctx.grid after setGrid would write to the stale (old-size)
-    // array, so from this point on we mutate `expandedGrid` directly.
-    const expandedGrid = expandGrid(ctx.grid, newSize);
-    ctx.setGrid(expandedGrid);
+    ctx.setGrid(expandGrid(ctx.grid, newSize));
     currentGridSize = newSize;
     syncGameDimsForMode();
 
-    // Pre-fill the new top row + right column HERE so the gridExpand
-    // event's gridAfter snapshot contains the freshly-spawned symbols.
-    // _playGridExpand reads gridAfter[r][c] for every new slot to
-    // build its drop-in animation — if those slots are still null,
-    // the animator skips them and the new symbols never appear.
-    // Cells inside the old footprint that happen to be null (from
-    // dissolves + gravity) get filled by the regular refill step
-    // after this hook returns — they're handled by the refill event.
+    // Pre-fill the new top row + right column HERE so gridExpand's
+    // gridAfter snapshot contains the freshly-spawned symbols.
+    // _playGridExpand can then drop them in alongside the carried-over
+    // flowers in a single coordinated animation. Without this, the new
+    // cells are still null when gridAfter is snapshotted and the
+    // animator has nothing to spawn into the new slots.
     const expandNewCells = [];
     for (let r = 0; r < newSize; r++) {
       for (let c = 0; c < newSize; c++) {
+        // Only fill cells that are in the NEWLY REVEALED area: top
+        // rows (r < newSize - oldSize) OR right column (c >= oldSize).
+        // Cells in the old footprint that happen to be null (from
+        // dissolves + gravity) get filled by the regular refill step
+        // below — don't touch them here so gravity's fall-in reads
+        // naturally as "old layout, then new cells arrive".
         const inNewArea = (r < newSize - oldSize) || (c >= oldSize);
         if (!inNewArea) continue;
-        if (expandedGrid[r][c]) continue;
+        if (ctx.grid[r][c]) continue;
         const cell = spawnCell();
-        expandedGrid[r][c] = cell;
+        ctx.grid[r][c] = cell;
         const nc = { r, c, color: cell.color, petals: cell.petals };
         if (cell.wild) {
           nc.wild = true;
@@ -1423,8 +1421,8 @@ const HOOKS_ALT3 = {
       type: 'gridExpand',
       cascadeIndex: ctx.cas,
       oldSize, newSize,
-      gridAfter: cloneGrid(expandedGrid),  // includes the new cells
-      newCells: expandNewCells,
+      gridAfter: cloneGrid(ctx.grid),   // now includes the new cells
+      newCells: expandNewCells,          // available if _playGridExpand wants it
     });
   },
   decorateDissolveEvent(state, ev) {
