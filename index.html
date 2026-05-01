@@ -131,9 +131,9 @@ await Promise.all(Object.entries(PETAL_FILE_BY_COLOR).map(async ([colorName, fil
 const GAME = {
   // ROWS/COLS/MAX_PETALS are mutable in alt-3 (Expanding Reels).
   // Defaults are the alt-1/alt-2 values.
-  ROWS: 4,
-  COLS: 5,
-  MAX_PETALS: 8,
+  ROWS: 5,
+  COLS: 6,
+  MAX_PETALS: 6,
   MAX_TRANSFER_PASSES: 50,
   MAX_CASCADES: 100,
 
@@ -180,14 +180,14 @@ const GAME = {
   // basePay is the actual coins-per-bet-unit a Full Bloom pays out. Tune
   // RTP by editing these values directly — no global multiplier in between.
   COLORS: [
-    { name: 'Scarlet', weight: 5,  basePay: 2.5,  hex: '#D50000' },
-    { name: 'Indigo',  weight: 7,  basePay: 2,    hex: '#304FFE' },
-    { name: 'Magenta', weight: 9,  basePay: 1.75, hex: '#C2185B' },
-    { name: 'Gold',    weight: 11, basePay: 1.5,  hex: '#FF6F00' },
-    { name: 'Teal',    weight: 13, basePay: 1,    hex: '#00796B' },
-    { name: 'Lime',    weight: 15, basePay: 0.75, hex: '#558B2F' },
-    { name: 'Sky',     weight: 17, basePay: 0.5,  hex: '#0277BD' },
-    { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
+    { name: 'Scarlet', weight: 5,  basePay: 1,  hex: '#D50000' },
+    { name: 'Indigo',  weight: 7,  basePay: 0.8,    hex: '#304FFE' },
+    { name: 'Magenta', weight: 9,  basePay: 0.6, hex: '#C2185B' },
+    { name: 'Gold',    weight: 11, basePay: 0.4,  hex: '#FF6F00' },
+    { name: 'Teal',    weight: 13, basePay: 0.4,    hex: '#00796B' },
+    { name: 'Lime',    weight: 15, basePay: 0.2, hex: '#558B2F' },
+    { name: 'Sky',     weight: 17, basePay: 0.2,  hex: '#0277BD' },
+    { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
   ],
 
   // Drop weights for alt-1 (Chain) and alt-2 (Tile). Total = 100, so each
@@ -221,9 +221,9 @@ function syncGameDimsForMode() {
     GAME.COLS       = currentGridSize;
     GAME.MAX_PETALS = GAME.ALT3_MAX_PETALS;
   } else {
-    GAME.ROWS       = 4;
-    GAME.COLS       = 5;
-    GAME.MAX_PETALS = 8;
+    GAME.ROWS       = 5;
+    GAME.COLS       = 6;
+    GAME.MAX_PETALS = 6;
   }
 }
 
@@ -296,11 +296,7 @@ function weightedPick(items) {
 // runs out of petals it dissolves like an empty pot (no Full Bloom).
 const ALT4_WILD_SPAWN_CHANCE = 0.05;
 const ALT4_WILD_PETAL_WEIGHTS = [
-  { count: 4, weight: 35 },
-  { count: 5, weight: 28 },
-  { count: 6, weight: 18 },
-  { count: 7, weight: 12 },
-  { count: 8, weight:  7 },
+  { count: 6, weight:  1 },
 ];
 
 function isWildCell(cell) { return !!(cell && cell.wild); }
