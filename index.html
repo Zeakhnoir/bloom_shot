@@ -1576,6 +1576,65 @@ const HOOKS_ALT4 = {
   },
 };
 
+// ─── Alt 2 instance — independent copy of Bloom Wilds engine ───────────────
+// All parameters (WILD_SPAWN_CHANCE, wild bump value, grid dims, petal
+// weights, etc.) can be tuned here independently of Alt 1 and Alt 3.
+const HOOKS_ALT2_INST = {
+  ..._tileHooksBase(),
+  _wildsThisSpin: 0,
+  WILD_SPAWN_CHANCE: 0.05,
+  resetForSpin() {
+    this._wildsThisSpin = 0;
+  },
+  rollSpecialSpawn() {
+    if (this._wildsThisSpin > 0) return null;
+    if (_rng() >= this.WILD_SPAWN_CHANCE) return null;
+    this._wildsThisSpin++;
+    return spawnWildCell();
+  },
+  runExtraTransfers({ cur, passes, runTransfers, transferPass, cloneGrid }) {
+    let grid = cur;
+    for (let wpi = 0; wpi < GAME.MAX_TRANSFER_PASSES; wpi++) {
+      const { nextGrid, moves } = transferPass(grid, { kind: 'wild' });
+      if (moves.length === 0) break;
+      passes.push({
+        passIndex: passes.length,
+        moves,
+        gridAfter: cloneGrid(nextGrid),
+        kind: 'wild',
+      });
+      grid = nextGrid;
+      const reRun = runTransfers(grid);
+      for (const rp of reRun.passes) {
+        rp.passIndex = passes.length;
+        passes.push(rp);
+      }
+      grid = reRun.finalGrid;
+    }
+    return { finalGrid: grid };
+  },
+  applyWildBumps(state, passes) {
+    state.wildBumpsByPassIdx = passes.map(() => []);
+    for (let pi = 0; pi < passes.length; pi++) {
+      const p = passes[pi];
+      if (p.kind !== 'wild') continue;
+      for (const move of p.moves) {
+        if (!move.wild) continue;
+        const tr = move.to.r, tc = move.to.c;
+        const oldVal = state.cellMults[tr][tc] || 0;
+        const newVal = oldVal + 2;
+        state.cellMults[tr][tc] = newVal;
+        state.wildBumpsByPassIdx[pi].push({
+          r: tr, c: tc,
+          oldValue: oldVal,
+          newValue: newVal,
+          from: move.from,
+        });
+      }
+    }
+  },
+};
+
 // ─── alt-5: Ripple Bloom ────────────────────────────────────────────────────
 // Every Full Bloom has a chance to leave behind a handful of stray petals of
 // random colours. For each stray petal:
@@ -2144,7 +2203,7 @@ const HOOKS_ALT6 = {
 
 const MODE_HOOKS = {
   alt1: HOOKS_ALT4,
-  alt2: HOOKS_ALT4,
+  alt2: HOOKS_ALT2_INST,
   alt3: HOOKS_ALT4,
 };
 
