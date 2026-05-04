@@ -249,18 +249,15 @@ const VARIANT_CONFIGS = {
   alt4a: {
     label: 'Variant A',
 
-    rows: 4,
-    cols: 5,
-    maxPetals: 8,
+    rows: 5,
+    cols: 6,
+    maxPetals: 6,
 
     wildSpawnChance: 0.05,
     wildMaxPerSpin:  1,
     wildPetalWeights: [
-      { count: 4, weight: 35 },
-      { count: 5, weight: 28 },
-      { count: 6, weight: 18 },
-      { count: 7, weight: 12 },
-      { count: 8, weight:  7 },
+      { count: 6, weight: 1 },
+     
     ],
 
     petalWeights: [
@@ -292,9 +289,9 @@ const VARIANT_CONFIGS = {
     ],
 
     scatterSpawnChance: 0.05,
-    scatterPayouts: { 4: 3, 5: 5, 6: 100 },
+    scatterPayouts: { 4: 0, 5: 0, 6: 0 },
 
-    featureSpins:    15,
+    featureSpins:    10,
     retriggerSpins:   5,
     featureCostMult: 100,
   },
