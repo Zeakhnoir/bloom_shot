@@ -587,23 +587,96 @@ function getScatterSpawnChance() {
 }
 
 function spawnCell() {
-  // Scatter spawn — applies to every mode. Capped at SCATTER_MAX_ON_GRID
-  // globally so the screen never holds more than 6.
-  if (_scattersOnGrid < SCATTER_MAX_ON_GRID
-      && _rng() < getScatterSpawnChance()) {
-    _scattersOnGrid++;
-    return spawnScatterCell();
+  // ── Unified weighted spawn pool ─────────────────────────────────────
+  // Scatter and WILD are NOT independent pre-gates anymore — they're
+  // folded into the SAME weighted pick as the regular flower colours.
+  // One weighted draw decides whether this cell is a regular colour, a
+  // scatter, or a WILD.
+  //
+  // To preserve each variant's existing per-cell probability tuning
+  // (scatterSpawnChance, wildSpawnChance), we convert those probabilities
+  // into weights sized relative to the regular-colour weight pool:
+  //   if W_reg = sum(regular colour weights) and we want the scatter to
+  //   occupy fraction p_s of the unified pool (and wild fraction p_w),
+  //   then unified total W_tot = W_reg / (1 - p_s - p_w), and
+  //   w_scatter = p_s * W_tot,  w_wild = p_w * W_tot.
+  // That keeps the *effective* per-cell scatter/wild rates identical to
+  // the legacy behaviour while letting them lose the roll to a regular
+  // colour (and vice versa) in the same single weighted decision.
+  //
+  // Gates (any of which removes that special from the pool entirely so
+  // the regular colours absorb its share):
+  //   • scatter is gated off when _scattersOnGrid is at SCATTER_MAX_ON_GRID
+  //   • wild is gated off when the variant has no wild support, or when
+  //     the active mode's per-spin wild quota is already exhausted
+  // Special petal-spawn hooks (e.g. Bloom Wilds' WILD pot stack) are
+  // still produced via spawnWildCell()/spawnScatterCell() so all the
+  // downstream code (transfer, dissolve, refill) sees the same shape
+  // it did before.
+
+  const colors = GAME.COLORS;
+  let wReg = 0;
+  for (let i = 0; i < colors.length; i++) wReg += colors[i].weight;
+
+  const variant = (typeof getVariantConfig === 'function') ? getVariantConfig() : null;
+
+  // Effective per-cell scatter chance (already accounts for in-feature scaling).
+  const scatterAllowed = (_scattersOnGrid < SCATTER_MAX_ON_GRID);
+  const pScatter = scatterAllowed ? Math.max(0, Math.min(0.95, getScatterSpawnChance() || 0)) : 0;
+
+  // Wild gate: only variants that publish a wildSpawnChance + use the
+  // mode's wild rollSpecialSpawn hook participate. We also honour the
+  // active mode's per-spin wild quota (HOOKS_ALT4 owns _wildsThisSpin).
+  const hooks    = getModeHooks();
+  const usesWild = !!(hooks && hooks.rollSpecialSpawn === HOOKS_ALT4.rollSpecialSpawn);
+  let pWild = 0;
+  if (usesWild && variant && variant.wildSpawnChance > 0) {
+    const cap = variant.wildMaxPerSpin ?? Infinity;
+    if ((HOOKS_ALT4._wildsThisSpin || 0) < cap) {
+      pWild = Math.max(0, Math.min(0.95, variant.wildSpawnChance));
+    }
   }
-  // First chance for the active mode to inject a special cell (e.g.
-  // Bloom Wilds rolls for a WILD pot here, capped to one per spin).
-  // Returning null falls through to a regular flower spawn.
-  const special = getModeHooks().rollSpecialSpawn?.();
-  if (special) return special;
-  // Regular flower — colour from GAME.COLORS, petal count from the
-  // active mode's petal-weight table (Bloom Reels uses a 1-3 spread
-  // for its 6-petal blooms; everyone else uses GAME.PETAL_WEIGHTS).
+
+  // Clamp combined specials to leave at least 1% room for regulars.
+  let pSpecial = pScatter + pWild;
+  if (pSpecial >= 0.99) {
+    const k = 0.99 / pSpecial;
+    pScatter *= k;
+    pWild    *= k;
+    pSpecial  = pScatter + pWild;
+  }
+
+  // Convert probabilities → weights on the same scale as wReg.
+  const wTotal   = wReg / (1 - pSpecial);
+  const wScatter = pScatter * wTotal;
+  const wWild    = pWild    * wTotal;
+
+  // Single weighted draw across regulars + (optional) scatter + (optional) wild.
+  let r = _rng() * (wReg + wScatter + wWild);
+
+  if (wScatter > 0) {
+    if (r < wScatter) {
+      _scattersOnGrid++;
+      return spawnScatterCell();
+    }
+    r -= wScatter;
+  }
+  if (wWild > 0) {
+    if (r < wWild) {
+      HOOKS_ALT4._wildsThisSpin = (HOOKS_ALT4._wildsThisSpin || 0) + 1;
+      return spawnWildCell();
+    }
+    r -= wWild;
+  }
+  // Regular flower — pick colour by weight from the leftover roll.
+  let pickedColor = colors[colors.length - 1].name;
+  let acc = 0;
+  for (let i = 0; i < colors.length; i++) {
+    acc += colors[i].weight;
+    if (r < acc) { pickedColor = colors[i].name; break; }
+  }
   return {
-    color:  weightedPick(GAME.COLORS).name,
+    color:  pickedColor,
     petals: weightedPick(getModeHooks().getSpawnPetalWeights()).count,
   };
 }
