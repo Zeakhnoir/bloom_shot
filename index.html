@@ -225,7 +225,10 @@ const COLOR_BY_NAME = Object.fromEntries(GAME.COLORS.map(c => [c.name, c]));
 //   label             — text on the top button
 //   rows / cols       — grid dimensions
 //   maxPetals         — petals required for a Full Bloom
-//   wildSpawnChance   — per-cell probability of a WILD pot spawning
+//   wildWeight        — raw spawn weight for WILD, sized against the
+//                       sum of the variant's colour weights (e.g. if
+//                       colours sum to 97 and wildWeight is 5, WILD
+//                       takes ~5 / (97+scatterWeight+5) of every spawn)
 //   wildMaxPerSpin    — cap on WILDs spawning during a single spin
 //                       (1 keeps the original "one wild per spin" rule;
 //                       set higher to let the variant spawn more)
@@ -238,7 +241,9 @@ const COLOR_BY_NAME = Object.fromEntries(GAME.COLORS.map(c => [c.name, c]));
 //                       basePay × bet for a Full Bloom). Names must
 //                       match petal art assets (Scarlet, Indigo,
 //                       Magenta, Gold, Teal, Lime, Sky, Pearl).
-//   scatterSpawnChance — per-cell probability of a scatter symbol
+//   scatterWeight     — raw spawn weight for the scatter symbol, in
+//                       the same flat pool as the colour weights (and
+//                       the wildWeight); pick is one weighted draw
 //   scatterPayouts    — { count: × bet } for end-of-spin scatter pay
 //   featureSpins      — free-spin count when scatters trigger / buy
 //   retriggerSpins    — extra spins added when scatters retrigger
@@ -253,7 +258,7 @@ const VARIANT_CONFIGS = {
     cols: 6,
     maxPetals: 6,
 
-    wildSpawnChance: 0.05,
+    wildWeight:      5,
     wildMaxPerSpin:  1,
     wildPetalWeights: [
       { count: 6, weight: 1 },
@@ -287,7 +292,7 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
     ],
 
-    scatterSpawnChance: 0.01922,
+    scatterWeight:  2,
     scatterPayouts: { 4: 0, 5: 0, 6: 0 },
 
     featureSpins:    10,
@@ -302,7 +307,7 @@ const VARIANT_CONFIGS = {
     cols: 5,
     maxPetals: 8,
 
-    wildSpawnChance: 0.05,
+    wildWeight:      5,
     wildMaxPerSpin:  1,
     wildPetalWeights: [
       { count: 4, weight: 35 },
@@ -340,7 +345,7 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
     ],
 
-    scatterSpawnChance: 0.05,
+    scatterWeight:  5,
     scatterPayouts: { 4: 3, 5: 5, 6: 100 },
 
     featureSpins:    15,
@@ -355,7 +360,7 @@ const VARIANT_CONFIGS = {
     cols: 5,
     maxPetals: 8,
 
-    wildSpawnChance: 0.05,
+    wildWeight:      5,
     wildMaxPerSpin:  1,
     wildPetalWeights: [
       { count: 4, weight: 35 },
@@ -393,7 +398,7 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
     ],
 
-    scatterSpawnChance: 0.05,
+    scatterWeight:  5,
     scatterPayouts: { 4: 3, 5: 5, 6: 100 },
 
     featureSpins:    15,
@@ -512,7 +517,7 @@ function weightedPick(items) {
 // drawn from the standard colour weights; on transfer it's sent to the
 // nearest grid-wide cell whose colour matches that petal. When a WILD
 // runs out of petals it dissolves like an empty pot (no Full Bloom).
-// Legacy — superseded by VARIANT_CONFIGS[k].wildSpawnChance and
+// Legacy — superseded by VARIANT_CONFIGS[k].wildWeight and
 // VARIANT_CONFIGS[k].wildPetalWeights. Kept as harmless placeholders
 // so any orphan reference (none expected) doesn't throw.
 const ALT4_WILD_SPAWN_CHANCE   = 0;
@@ -573,86 +578,85 @@ function spawnWildCell() {
   };
 }
 
-// Scatter per-cell spawn chance. Base 5% is tuned for the fixed 7×7
-// grid modes. Alt-3 (Expanding Reels) spawns many more cells per spin
-// because each cascade grows the grid AND refills every empty pot, so
-// at the flat base rate scatters stack to 6 quickly and the feature
-// retriggers forever. Scale the per-cell rate inversely to grid area for
-// larger grids so expected scatters per spin stay in roughly the same
-// range across all modes.
-function getScatterSpawnChance() {
-  const inFeature  = !!(player && player.feature && player.feature.active);
-  const baseChance = getVariantConfig().scatterSpawnChance;
-  return inFeature ? baseChance * 0.25 : baseChance;
+// Effective scatter spawn weight for the current spin. Reads the raw
+// per-variant `scatterWeight`, then applies the in-feature dampener
+// (×0.25 during free spins so retriggers don't spiral). The result is
+// a weight on the same flat scale as GAME.COLORS[i].weight — it goes
+// straight into the unified weighted pool in spawnCell().
+function getScatterWeight() {
+  const inFeature = !!(player && player.feature && player.feature.active);
+  const baseW     = getVariantConfig().scatterWeight || 0;
+  return inFeature ? baseW * 0.25 : baseW;
+}
+// Same idea for WILD. Variants that don't use wilds set wildWeight to 0
+// (or omit the field). The per-spin wildMaxPerSpin cap is applied in
+// spawnCell() — once the cap is hit, the wild slot is removed from the
+// pool entirely for the rest of the spin.
+function getWildWeight() {
+  return getVariantConfig().wildWeight || 0;
 }
 
 function spawnCell() {
-  // ── Unified weighted spawn pool ─────────────────────────────────────
-  // Scatter and WILD are NOT independent pre-gates anymore — they're
-  // folded into the SAME weighted pick as the regular flower colours.
-  // One weighted draw decides whether this cell is a regular colour, a
-  // scatter, or a WILD.
+  // ── Flat unified weight pool ────────────────────────────────────────
+  // Scatter and WILD live in the SAME flat weight table as the regular
+  // flower colours. Picking a cell is a single weighted draw across
+  // [...colors, scatter?, wild?]. No probability conversion — the
+  // scatterWeight / wildWeight numbers in each variant config are raw
+  // weights, sized against the colour weights (which sum to 97 in the
+  // base table).
   //
-  // To preserve each variant's existing per-cell probability tuning
-  // (scatterSpawnChance, wildSpawnChance), we convert those probabilities
-  // into weights sized relative to the regular-colour weight pool:
-  //   if W_reg = sum(regular colour weights) and we want the scatter to
-  //   occupy fraction p_s of the unified pool (and wild fraction p_w),
-  //   then unified total W_tot = W_reg / (1 - p_s - p_w), and
-  //   w_scatter = p_s * W_tot,  w_wild = p_w * W_tot.
-  // That keeps the *effective* per-cell scatter/wild rates identical to
-  // the legacy behaviour while letting them lose the roll to a regular
-  // colour (and vice versa) in the same single weighted decision.
+  // Example with variant alt4b (colour weights sum 97, scatterWeight=5,
+  // wildWeight=5):
+  //   total pool = 97 + 5 + 5 = 107
+  //   P(scatter) = 5/107 ≈ 4.67%
+  //   P(wild)    = 5/107 ≈ 4.67%
+  //   P(Pearl)   = 20/107 ≈ 18.7%   (Pearl had weight 20)
   //
-  // Gates (any of which removes that special from the pool entirely so
-  // the regular colours absorb its share):
-  //   • scatter is gated off when _scattersOnGrid is at SCATTER_MAX_ON_GRID
-  //   • wild is gated off when the variant has no wild support, or when
-  //     the active mode's per-spin wild quota is already exhausted
-  // Special petal-spawn hooks (e.g. Bloom Wilds' WILD pot stack) are
-  // still produced via spawnWildCell()/spawnScatterCell() so all the
-  // downstream code (transfer, dissolve, refill) sees the same shape
-  // it did before.
+  // Gates that REMOVE a slot from the pool entirely (regulars absorb the
+  // freed share — no probability vanishes):
+  //   • scatter dropped when _scattersOnGrid >= SCATTER_MAX_ON_GRID
+  //   • wild dropped when the variant doesn't support wilds, when its
+  //     mode isn't the wild mode, or when wildMaxPerSpin is exhausted
+  //
+  // Downstream code (transfer, dissolve, refill, WILD outflow) is
+  // unchanged — spawnScatterCell() and spawnWildCell() still produce
+  // the exact same cell shapes they always did.
 
   const colors = GAME.COLORS;
-  let wReg = 0;
-  for (let i = 0; i < colors.length; i++) wReg += colors[i].weight;
 
-  const variant = (typeof getVariantConfig === 'function') ? getVariantConfig() : null;
-
-  // Effective per-cell scatter chance (already accounts for in-feature scaling).
+  // Scatter slot — gated by the global on-screen cap.
   const scatterAllowed = (_scattersOnGrid < SCATTER_MAX_ON_GRID);
-  const pScatter = scatterAllowed ? Math.max(0, Math.min(0.95, getScatterSpawnChance() || 0)) : 0;
+  const wScatter = scatterAllowed ? getScatterWeight() : 0;
 
-  // Wild gate: only variants that publish a wildSpawnChance + use the
-  // mode's wild rollSpecialSpawn hook participate. We also honour the
-  // active mode's per-spin wild quota (HOOKS_ALT4 owns _wildsThisSpin).
+  // Wild slot — only the wild mode (HOOKS_ALT4) participates, and only
+  // until the per-spin wild quota fills.
   const hooks    = getModeHooks();
   const usesWild = !!(hooks && hooks.rollSpecialSpawn === HOOKS_ALT4.rollSpecialSpawn);
-  let pWild = 0;
-  if (usesWild && variant && variant.wildSpawnChance > 0) {
-    const cap = variant.wildMaxPerSpin ?? Infinity;
+  let wWild = 0;
+  if (usesWild) {
+    const variant = getVariantConfig();
+    const cap     = variant.wildMaxPerSpin ?? Infinity;
     if ((HOOKS_ALT4._wildsThisSpin || 0) < cap) {
-      pWild = Math.max(0, Math.min(0.95, variant.wildSpawnChance));
+      wWild = getWildWeight();
     }
   }
 
-  // Clamp combined specials to leave at least 1% room for regulars.
-  let pSpecial = pScatter + pWild;
-  if (pSpecial >= 0.99) {
-    const k = 0.99 / pSpecial;
-    pScatter *= k;
-    pWild    *= k;
-    pSpecial  = pScatter + pWild;
+  // Sum the regular colour weights once.
+  let wReg = 0;
+  for (let i = 0; i < colors.length; i++) wReg += colors[i].weight;
+
+  const wTotal = wReg + wScatter + wWild;
+  // Defensive: if everything's zero (shouldn't happen with sane configs),
+  // fall through to first colour rather than NaN-ing the cell.
+  if (wTotal <= 0) {
+    return {
+      color:  colors[0].name,
+      petals: weightedPick(getModeHooks().getSpawnPetalWeights()).count,
+    };
   }
 
-  // Convert probabilities → weights on the same scale as wReg.
-  const wTotal   = wReg / (1 - pSpecial);
-  const wScatter = pScatter * wTotal;
-  const wWild    = pWild    * wTotal;
-
-  // Single weighted draw across regulars + (optional) scatter + (optional) wild.
-  let r = _rng() * (wReg + wScatter + wWild);
+  // Single weighted draw. Order: scatter, wild, then regulars in array order.
+  let r = _rng() * wTotal;
 
   if (wScatter > 0) {
     if (r < wScatter) {
@@ -668,7 +672,7 @@ function spawnCell() {
     }
     r -= wWild;
   }
-  // Regular flower — pick colour by weight from the leftover roll.
+  // Regular flower.
   let pickedColor = colors[colors.length - 1].name;
   let acc = 0;
   for (let i = 0; i < colors.length; i++) {
@@ -1598,10 +1602,11 @@ const MODE_HOOKS_DEFAULT = {
   getGridDims() {
     return { rows: 4, cols: 5, maxPetals: 8 };
   },
-  // Base scatter spawn chance per cell (in-feature dampening is
-  // applied generically by the engine on top of this).
+  // Base scatter spawn weight per cell (in-feature dampening is
+  // applied generically by the engine on top of this). Reads the
+  // raw scatterWeight from the active variant.
   getScatterChance() {
-    return getVariantConfig().scatterSpawnChance;
+    return getVariantConfig().scatterWeight;
   },
   // Petal-count weights for fresh cells.
   getSpawnPetalWeights() {
@@ -1801,14 +1806,15 @@ const HOOKS_ALT4 = {
   resetForSpin() {
     this._wildsThisSpin = 0;
   },
-  // Override base spawn: roll for a WILD pot once per spin (capped at
-  // one). After the cap we fall through to the regular flower spawn.
+  // SENTINEL — kept as an identity reference so spawnCell() can detect
+  // "this is the wild mode" via `hooks.rollSpecialSpawn === HOOKS_ALT4.rollSpecialSpawn`.
+  // The actual wild-spawn decision now happens inline in spawnCell()
+  // as part of the unified weight pool (driven by variant.wildWeight
+  // + variant.wildMaxPerSpin). Returning null here keeps the legacy
+  // "first chance to inject a special cell" hook contract intact for
+  // any future caller without double-rolling wilds.
   rollSpecialSpawn() {
-    const v = getVariantConfig();
-    if (this._wildsThisSpin >= v.wildMaxPerSpin) return null;
-    if (_rng() >= v.wildSpawnChance) return null;
-    this._wildsThisSpin++;
-    return spawnWildCell();
+    return null;
   },
   // After regular transfers stabilise, run WILD-out-petal passes
   // interleaved with regular re-stabilisations until both phases are
