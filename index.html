@@ -241,9 +241,15 @@ const COLOR_BY_NAME = Object.fromEntries(GAME.COLORS.map(c => [c.name, c]));
 //                       basePay × bet for a Full Bloom). Names must
 //                       match petal art assets (Scarlet, Indigo,
 //                       Magenta, Gold, Teal, Lime, Sky, Pearl).
-//   scatterWeight     — raw spawn weight for the scatter symbol, in
-//                       the same flat pool as the colour weights (and
-//                       the wildWeight); pick is one weighted draw
+//   scatterWeight        — raw spawn weight for the scatter symbol
+//                          during BASE-GAME spins, in the same flat
+//                          pool as the colour weights (and wildWeight);
+//                          pick is one weighted draw
+//   scatterWeightFeature — same idea but used during FREE-SPIN feature
+//                          spins. Set lower than scatterWeight to dampen
+//                          retriggers; set higher to make retriggers
+//                          more frequent. Falls back to scatterWeight
+//                          if omitted.
 //   scatterPayouts    — { count: × bet } for end-of-spin scatter pay
 //   featureSpins      — free-spin count when scatters trigger / buy
 //   retriggerSpins    — extra spins added when scatters retrigger
@@ -292,7 +298,8 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
     ],
 
-    scatterWeight:  2,
+    scatterWeight:        2,
+    scatterWeightFeature: 0.5,
     scatterPayouts: { 4: 0, 5: 0, 6: 0 },
 
     featureSpins:    10,
@@ -345,7 +352,8 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
     ],
 
-    scatterWeight:  5,
+    scatterWeight:        5,
+    scatterWeightFeature: 1,
     scatterPayouts: { 4: 3, 5: 5, 6: 100 },
 
     featureSpins:    15,
@@ -398,7 +406,8 @@ const VARIANT_CONFIGS = {
       { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
     ],
 
-    scatterWeight:  5,
+    scatterWeight:        5,
+    scatterWeightFeature: 1,
     scatterPayouts: { 4: 3, 5: 5, 6: 100 },
 
     featureSpins:    15,
@@ -578,15 +587,21 @@ function spawnWildCell() {
   };
 }
 
-// Effective scatter spawn weight for the current spin. Reads the raw
-// per-variant `scatterWeight`, then applies the in-feature dampener
-// (×0.25 during free spins so retriggers don't spiral). The result is
-// a weight on the same flat scale as GAME.COLORS[i].weight — it goes
-// straight into the unified weighted pool in spawnCell().
+// Effective scatter spawn weight for the current spin. Two independent
+// per-variant knobs:
+//   • scatterWeight        — used during base-game spins
+//   • scatterWeightFeature — used during free-spin feature spins
+// Whichever is active gets returned as a weight on the same flat scale
+// as GAME.COLORS[i].weight, and goes straight into the unified weighted
+// pool in spawnCell(). If scatterWeightFeature is omitted, falls back
+// to scatterWeight (so older configs keep working).
 function getScatterWeight() {
   const inFeature = !!(player && player.feature && player.feature.active);
-  const baseW     = getVariantConfig().scatterWeight || 0;
-  return inFeature ? baseW * 0.25 : baseW;
+  const v         = getVariantConfig();
+  if (inFeature) {
+    return (v.scatterWeightFeature !== undefined ? v.scatterWeightFeature : v.scatterWeight) || 0;
+  }
+  return v.scatterWeight || 0;
 }
 // Same idea for WILD. Variants that don't use wilds set wildWeight to 0
 // (or omit the field). The per-spin wildMaxPerSpin cap is applied in
