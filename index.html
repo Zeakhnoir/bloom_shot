@@ -265,7 +265,7 @@ const VARIANT_CONFIGS = {
     maxPetals: 6,
 
     wildWeight:      5,
-    wildMaxPerSpin:  1,
+    wildMaxPerSpin:  6,
     wildPetalWeights: [
       { count: 6, weight: 1 },
      
@@ -300,7 +300,7 @@ const VARIANT_CONFIGS = {
 
     scatterWeight:        2,
     scatterWeightFeature: 0.5,
-    scatterPayouts: { 4: 0, 5: 0, 6: 0 },
+    scatterPayouts: { 4: 3, 5: 5, 6: 100 },
 
     featureSpins:    10,
     retriggerSpins:   5,
@@ -314,21 +314,18 @@ const VARIANT_CONFIGS = {
     cols: 5,
     maxPetals: 8,
 
-    wildWeight:      5,
-    wildMaxPerSpin:  1,
+    wildWeight:      3,
+    wildMaxPerSpin:  5,
     wildPetalWeights: [
-      { count: 4, weight: 35 },
-      { count: 5, weight: 28 },
-      { count: 6, weight: 18 },
-      { count: 7, weight: 12 },
-      { count: 8, weight:  7 },
+      { count: 8, weight:  1 },
     ],
 
     petalWeights: [
       { count: 1, weight: 42 },
-      { count: 2, weight: 37 },
-      { count: 3, weight: 15 },
+      { count: 2, weight: 32 },
+      { count: 3, weight: 10 },
       { count: 4, weight:  6 },
+      { count: 5, weight:  2 },
     ],
 
     multTileWeights: [
@@ -342,23 +339,23 @@ const VARIANT_CONFIGS = {
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 5,  basePay: 2.5,  hex: '#D50000' },
-      { name: 'Indigo',  weight: 7,  basePay: 2,    hex: '#304FFE' },
-      { name: 'Magenta', weight: 9,  basePay: 1.75, hex: '#C2185B' },
-      { name: 'Gold',    weight: 11, basePay: 1.5,  hex: '#FF6F00' },
-      { name: 'Teal',    weight: 13, basePay: 1,    hex: '#00796B' },
-      { name: 'Lime',    weight: 15, basePay: 0.75, hex: '#558B2F' },
-      { name: 'Sky',     weight: 17, basePay: 0.5,  hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20, basePay: 0.25, hex: '#78909C' },
+      { name: 'Scarlet', weight: 10,  basePay: 1,  hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,    hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
+      { name: 'Gold',    weight: 16, basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16, basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 18, basePay: 0.2, hex: '#558B2F' },
+      { name: 'Sky',     weight: 18, basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
     ],
 
-    scatterWeight:        5,
-    scatterWeightFeature: 1,
-    scatterPayouts: { 4: 3, 5: 5, 6: 100 },
+    scatterWeight:        4,
+    scatterWeightFeature: 0.5,
+    scatterPayouts: { 4: 5, 5: 10, 6: 200 },
 
     featureSpins:    15,
     retriggerSpins:   5,
-    featureCostMult: 100,
+    featureCostMult: 50,
   },
 
   alt4c: {
