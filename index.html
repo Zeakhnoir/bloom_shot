@@ -259,6 +259,7 @@ const COLOR_BY_NAME = Object.fromEntries(GAME.COLORS.map(c => [c.name, c]));
 const VARIANT_CONFIGS = {
   alt4a: {
     label: 'Variant A',
+    baseSpin: 1,
 
     rows: 5,
     cols: 6,
@@ -310,6 +311,7 @@ const VARIANT_CONFIGS = {
 
   alt4b: {
     label: 'Variant B',
+    baseSpin: 1,
 
     rows: 4,
     cols: 5,
@@ -361,6 +363,7 @@ const VARIANT_CONFIGS = {
 
   alt4c: {
     label: 'Variant C',
+    baseSpin: 1,
 
     rows: 4,
     cols: 5,
@@ -412,10 +415,171 @@ const VARIANT_CONFIGS = {
     retriggerSpins:   5,
     featureCostMult: 100,
   },
+
+  // ── Variants D / E / F — clones of Variant A ─────────────────────
+  // These three are full structural clones of alt4a (same grid, same
+  // colours/pays/wild/scatter setup). Only `featureCostMult` differs
+  // so the Buy Feature button price reads differently per variant —
+  // tune anything else (pays, weights, baseSpin) freely from here.
+  // Bumping a variant's `baseSpin` automatically rescales its bet
+  // ladder and Buy Feature cost via getEffectiveBet() / featureCost().
+
+  alt4d: {
+    label: 'Variant D',
+    baseSpin: 1,
+
+    rows: 5,
+    cols: 6,
+    maxPetals: 6,
+
+    wildWeight:      3,
+    wildMaxPerSpin:  6,
+    wildPetalWeights: [
+      { count: 6, weight: 1 },
+    ],
+
+    petalWeights: [
+      { count: 1, weight: 42 },
+      { count: 2, weight: 21 },
+      { count: 3, weight: 8 },
+      { count: 4, weight: 3 },
+    ],
+
+    multTileWeights: [
+      { value:   4, weight: 40 },
+      { value:   8, weight: 25 },
+      { value:  10, weight: 15 },
+      { value:  20, weight: 10 },
+      { value:  50, weight:  5 },
+      { value: 100, weight:  3 },
+      { value: 500, weight:  2 },
+    ],
+
+    colors: [
+      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
+      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
+    ],
+
+    scatterWeight:        2.3,
+    scatterWeightFeature: 0.5,
+    scatterPayouts: { 4: 15, 5: 30, 6: 300 },
+
+    featureSpins:    10,
+    retriggerSpins:   5,
+    featureCostMult: 200,
+  },
+
+  alt4e: {
+    label: 'Variant E',
+    baseSpin: 1,
+
+    rows: 5,
+    cols: 6,
+    maxPetals: 6,
+
+    wildWeight:      3,
+    wildMaxPerSpin:  6,
+    wildPetalWeights: [
+      { count: 6, weight: 1 },
+    ],
+
+    petalWeights: [
+      { count: 1, weight: 42 },
+      { count: 2, weight: 21 },
+      { count: 3, weight: 8 },
+      { count: 4, weight: 3 },
+    ],
+
+    multTileWeights: [
+      { value:   4, weight: 40 },
+      { value:   8, weight: 25 },
+      { value:  10, weight: 15 },
+      { value:  20, weight: 10 },
+      { value:  50, weight:  5 },
+      { value: 100, weight:  3 },
+      { value: 500, weight:  2 },
+    ],
+
+    colors: [
+      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
+      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
+    ],
+
+    scatterWeight:        2.3,
+    scatterWeightFeature: 0.5,
+    scatterPayouts: { 4: 15, 5: 30, 6: 300 },
+
+    featureSpins:    10,
+    retriggerSpins:   5,
+    featureCostMult: 600,
+  },
+
+  alt4f: {
+    label: 'Variant F',
+    baseSpin: 1,
+
+    rows: 5,
+    cols: 6,
+    maxPetals: 6,
+
+    wildWeight:      3,
+    wildMaxPerSpin:  6,
+    wildPetalWeights: [
+      { count: 6, weight: 1 },
+    ],
+
+    petalWeights: [
+      { count: 1, weight: 42 },
+      { count: 2, weight: 21 },
+      { count: 3, weight: 8 },
+      { count: 4, weight: 3 },
+    ],
+
+    multTileWeights: [
+      { value:   4, weight: 40 },
+      { value:   8, weight: 25 },
+      { value:  10, weight: 15 },
+      { value:  20, weight: 10 },
+      { value:  50, weight:  5 },
+      { value: 100, weight:  3 },
+      { value: 500, weight:  2 },
+    ],
+
+    colors: [
+      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
+      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
+    ],
+
+    scatterWeight:        2.3,
+    scatterWeightFeature: 0.5,
+    scatterPayouts: { 4: 15, 5: 30, 6: 300 },
+
+    featureSpins:    10,
+    retriggerSpins:   5,
+    featureCostMult: 800,
+  },
 };
 
 // Display order in the top button row.
-const VARIANT_KEYS = ['alt4a', 'alt4b', 'alt4c'];
+const VARIANT_KEYS = ['alt4a', 'alt4b', 'alt4c', 'alt4d', 'alt4e', 'alt4f'];
 
 // Resolve the active variant config — used everywhere in the engine.
 function getVariantConfig() {
@@ -774,6 +938,12 @@ function setAltMode(m) {
   // from a clean slate.
   getModeHooks().resetForSpin?.();
   syncGameDimsForMode();
+  // Rescale the displayed bet to the new variant's baseSpin (level
+  // index is preserved, so a player on "10× baseSpin" stays on that
+  // ladder rung — only the absolute number changes). Guarded because
+  // setAltMode runs once at boot before the bet helpers are reachable
+  // by name; the boot path calls recomputeBet() itself afterwards.
+  if (typeof recomputeBet === 'function') recomputeBet();
   try { localStorage.setItem(ALT_MODE_KEY, m); } catch (_) {}
 }
 // Boot-time GAME-dim sync deferred — `syncGameDimsForMode` now reads
@@ -2456,6 +2626,9 @@ const MODE_HOOKS = {
   alt4a: HOOKS_ALT4,
   alt4b: HOOKS_ALT4,
   alt4c: HOOKS_ALT4,
+  alt4d: HOOKS_ALT4,
+  alt4e: HOOKS_ALT4,
+  alt4f: HOOKS_ALT4,
 };
 
 function getModeHooks() {
@@ -8126,9 +8299,13 @@ let currentGameScale = 1;
 // ─── PLAYER STATE ───────────────────────────────────────────────────────────
 const player = {
   balance: 10000,
+  // Effective bet = betLevels[betIndex] × current variant's baseSpin.
+  // Kept up-to-date by recomputeBet(); recomputed on cycleBet() and
+  // on setAltMode(). With baseSpin=1 (the default) the levels behave
+  // as absolute coin amounts, matching legacy behaviour.
   bet: 1,
   betLevels: [1, 2, 5, 10, 20, 50, 100, 200],
-  betIndex: 3,          // starts at 10
+  betIndex: 3,          // starts at 10× baseSpin
   displayedWin: 0,      // last committed WIN value on screen
   // Free-spin feature. Available in both modes. When active, bet is
   // locked, spins don't deduct balance, and the multiplier state
@@ -8187,6 +8364,30 @@ function canAffordSpin() {
   return player.balance >= player.bet;
 }
 
+// ── Per-variant bet scaling ─────────────────────────────────────────
+// Each variant publishes a `baseSpin` anchor (default 1). The shared
+// `player.betLevels` array is no longer absolute coin amounts — it's a
+// ladder of MULTIPLIERS on baseSpin. Effective bet = level × baseSpin.
+//
+// Pay tables (colors[].basePay, scatterPayouts, multTileWeights) are
+// written at the variant's baseSpin scale, so RTP stays invariant.
+// All existing math sites that read `player.bet` keep working as-is —
+// we just keep player.bet kept up-to-date with `level × baseSpin`.
+//
+// recomputeBet() re-derives player.bet from the current level + variant
+// and refreshes UI labels. Call it whenever the level changes
+// (cycleBet) or the variant changes (setAltMode).
+function getBaseSpin() {
+  const v = getVariantConfig();
+  return (v && v.baseSpin) || 1;
+}
+function recomputeBet() {
+  const level = player.betLevels[player.betIndex] || 1;
+  player.bet  = level * getBaseSpin();
+  if (typeof updateBetText === 'function')        updateBetText();
+  if (typeof updateSpinButtonState === 'function') updateSpinButtonState();
+}
+
 function cycleBet(direction = +1) {
   // Bet locked while the free-spin feature is active.
   if (player.feature.active) return;
@@ -8195,9 +8396,7 @@ function cycleBet(direction = +1) {
   const next = player.betIndex + direction;
   if (next < 0 || next >= player.betLevels.length) return;
   player.betIndex = next;
-  player.bet = player.betLevels[player.betIndex];
-  updateBetText();
-  updateSpinButtonState();
+  recomputeBet();
 }
 
 function roundedRectGraphics(x, y, w, h, r, fill, strokeColor, strokeWidth) {
@@ -11245,6 +11444,12 @@ function _runPendingRebuild() {
   const L = calculateLayout(app.screen.width, app.screen.height);
   buildScene(L);
 }
+
+// Initialise player.bet from the active variant's baseSpin × the
+// default level multiplier. Without this the bet pill briefly shows
+// the raw level (e.g. "10") before the first cycleBet/setAltMode
+// happens, which is wrong if the active variant has baseSpin != 1.
+recomputeBet();
 
 rebuild();
 
