@@ -2670,7 +2670,7 @@ const MODE_DEF = {
     // bottom status to show the cumulative running total.
     onCascadeDissolve(player, scene, ev, ctx) {
       if (!ctx.inFeature) return;
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const baseline   = player.feature.totalWin || 0;
       updateStatusText(`WIN ${fmtCurrency(baseline + runningWin)}`);
     },
@@ -2760,7 +2760,7 @@ The Feature
     // bottom status text on every dissolve. Inside the feature this
     // is cumulative across all free spins.
     onCascadeDissolve(player, scene, ev, ctx) {
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const displayWin = ctx.inFeature
         ? (player.feature.totalWin || 0) + runningWin
         : runningWin;
@@ -2893,7 +2893,7 @@ The Feature
           }
         }
       }
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const displayWin = ctx.inFeature
         ? (player.feature.totalWin || 0) + runningWin
         : runningWin;
@@ -2984,7 +2984,7 @@ The Feature
     },
     // Same tile-mode running win as Bloom Tiles.
     onCascadeDissolve(player, scene, ev, ctx) {
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const displayWin = ctx.inFeature
         ? (player.feature.totalWin || 0) + runningWin
         : runningWin;
@@ -3128,7 +3128,7 @@ The Feature
     // text updates here (and only inside the feature).
     onCascadeDissolve(player, scene, ev, ctx) {
       if (!ctx.inFeature) return;
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const baseline   = player.feature.totalWin || 0;
       updateStatusText(`WIN ${fmtCurrency(baseline + runningWin)}`);
     },
@@ -3240,14 +3240,14 @@ The Feature
       if (!scene.alt6JackpotPots) return;
       scene.alt6JackpotPots.visible = !!player.feature.active;
       if (scene.alt6JackpotPots._refreshAllPayLabels) {
-        const b = (player.feature && player.feature.lockedBet) || player.bet || 1;
-        scene.alt6JackpotPots._refreshAllPayLabels(b);
+        const wb = (player.feature && player.feature.lockedWinBet) || player.winBet || 1;
+        scene.alt6JackpotPots._refreshAllPayLabels(wb);
       }
     },
     // Same chain-style running win as Bloom Ripple.
     onCascadeDissolve(player, scene, ev, ctx) {
       if (!ctx.inFeature) return;
-      const runningWin = ev.payoutTotal * ctx.bet;
+      const runningWin = ev.payoutTotal * ctx.winBet;
       const baseline   = player.feature.totalWin || 0;
       updateStatusText(`WIN ${fmtCurrency(baseline + runningWin)}`);
     },
@@ -3819,10 +3819,11 @@ MODE_DEF.alt6.buildSceneFeatureWidget = function (scene, app, ctx) {
     cont._refreshAllPayLabels = (bet) => {
       for (const s of slots) s._refreshPayLabel(bet);
     };
-    // Prime the cash labels with the active bet (locked feature bet
-    // takes precedence, otherwise current player bet).
+    // Prime the cash labels with the active winBet (locked feature winBet
+    // takes precedence, otherwise current player winBet — payouts are
+    // win-side, not spend-side, so winBet not bet).
     cont._refreshAllPayLabels(
-      (player.feature && player.feature.lockedBet) || player.bet || 1
+      (player.feature && player.feature.lockedWinBet) || player.winBet || 1
     );
     cont.visible = !!(player.feature.active);
     if (cont.visible && player.feature.alt6Jackpots) {
@@ -3857,7 +3858,19 @@ MODE_DEF.alt1.buildSceneFeatureWidget = function (scene, app, ctx) {
 // Run a full spin. Accepts optional bet (default 1) — updates cumulative RTP
 // stats. Returns:
 //   { events, finalGrid, totalPayout, multiplier, finalWin, cascadeCount, bet, rtp }
-function runSpin(bet = 1, opts = {}) {
+//
+// Two bet inputs:
+//   bet    — what the player paid for this spin (or paid for the feature
+//            entry, in the free-spin case). Used for: totalWager booking,
+//            UI threshold comparisons, and event ctx so animator's
+//            visual scaling stays correct.
+//   winBet — what payouts multiply by. In the legacy single-bet model
+//            this equals bet; with per-variant baseSpin the player can
+//            wager more (bet) than their wins scale by (winBet=level).
+//            Defaults to `bet` so unit tests and any leftover one-arg
+//            callers keep producing identical results.
+function runSpin(bet = 1, opts = {}, winBet = null) {
+  if (winBet == null) winBet = bet;
   const events = [];
   const hooks = getModeHooks();
   // Let the active mode reset any per-spin counters it owns (Bloom
@@ -4057,11 +4070,11 @@ function runSpin(bet = 1, opts = {}) {
       }
     }
   }
-  const scatterPayMult = (getScatterPayouts()[scatterCount]) || 0;   // × bet, per variant
-  const scatterPay     = scatterPayMult * bet;
+  const scatterPayMult = (getScatterPayouts()[scatterCount]) || 0;   // × winBet, per variant
+  const scatterPay     = scatterPayMult * winBet;
 
   const mathWin    = totalPayout * multiplier;
-  const finalWin   = mathWin * bet + scatterPay;
+  const finalWin   = mathWin * winBet + scatterPay;
 
   // ── Cumulative RTP stats ───────────────────────────────────────────
   stats.spins              += 1;
@@ -6929,10 +6942,12 @@ class SpinAnimator {
       this._spawnAlt6PayoutText(slot);
       // Credit the jackpot payout to the feature's running total
       // IMMEDIATELY so the bottom WIN readout reflects the prize the
-      // moment the pots flash, not at end of spin.
-      const bet = (player.feature && player.feature.lockedBet)
-                  || player.bet || 1;
-      const cash = slot.payout * bet;
+      // moment the pots flash, not at end of spin. winBet (not bet) so
+      // the alt6 payout follows the same payout-vs-cost split as the
+      // rest of the engine — see player.bet vs player.winBet.
+      const winBet = (player.feature && player.feature.lockedWinBet)
+                  || player.winBet || 1;
+      const cash = slot.payout * winBet;
       player.feature.totalWin = (player.feature.totalWin || 0) + cash;
       updateStatusText(`WIN ${fmtCurrency(player.feature.totalWin)}`);
     }
@@ -6947,9 +6962,9 @@ class SpinAnimator {
     const cx = pots.x + slotCont.x + slotW / 2;
     const cy = pots.y + slotCont.y + slotH / 2;
 
-    // Pay text shows the actual cash awarded (× current bet).
-    const bet = (player.feature && player.feature.lockedBet) || player.bet || 1;
-    const txt = new PIXI.Text(`+${fmtCurrency(slot.payout * bet)}`, {
+    // Pay text shows the actual cash awarded (× current winBet).
+    const winBet = (player.feature && player.feature.lockedWinBet) || player.winBet || 1;
+    const txt = new PIXI.Text(`+${fmtCurrency(slot.payout * winBet)}`, {
       fontFamily: FONT,
       fontSize: Math.max(28, 42 * currentGameScale),
       fill: 0xFFD54F,
@@ -8294,11 +8309,12 @@ let currentGameScale = 1;
 // ─── PLAYER STATE ───────────────────────────────────────────────────────────
 const player = {
   balance: 10000,
-  // Effective bet = betLevels[betIndex] × current variant's baseSpin.
-  // Kept up-to-date by recomputeBet(); recomputed on cycleBet() and
-  // on setAltMode(). With baseSpin=1 (the default) the levels behave
-  // as absolute coin amounts, matching legacy behaviour.
-  bet: 1,
+  // Two related bet numbers (see recomputeBet for the long version):
+  //   bet    = level × baseSpin → SPEND side (cost, totalWager)
+  //   winBet = level             → WIN side  (payouts, scatter pays, tiles)
+  // Both kept in sync by recomputeBet() on cycleBet/setAltMode.
+  bet:    1,
+  winBet: 1,
   betLevels: [1, 2, 5, 10, 20, 50, 100, 200],
   betIndex: 0,          // starts at 1× baseSpin
   displayedWin: 0,      // last committed WIN value on screen
@@ -8311,7 +8327,8 @@ const player = {
   feature: {
     active:          false,
     spinsLeft:       0,
-    lockedBet:       null,
+    lockedBet:       null,    // spend bet at trigger time
+    lockedWinBet:    null,    // win bet at trigger time
     totalWin:        0,
     costPaid:        0,      // cost player paid to enter feature (for popup + net-win)
     cellMults:       null,   // alt-2: per-cell tile multipliers
@@ -8361,16 +8378,31 @@ function canAffordSpin() {
 
 // ── Per-variant bet scaling ─────────────────────────────────────────
 // Each variant publishes a `baseSpin` anchor (default 1). The shared
-// `player.betLevels` array is no longer absolute coin amounts — it's a
-// ladder of MULTIPLIERS on baseSpin. Effective bet = level × baseSpin.
+// `player.betLevels` array is a ladder of MULTIPLIERS on baseSpin.
 //
-// Pay tables (colors[].basePay, scatterPayouts, multTileWeights) are
-// written at the variant's baseSpin scale, so RTP stays invariant.
-// All existing math sites that read `player.bet` keep working as-is —
-// we just keep player.bet kept up-to-date with `level × baseSpin`.
+// Two distinct "bet" numbers are derived from the level + baseSpin:
 //
-// recomputeBet() re-derives player.bet from the current level + variant
-// and refreshes UI labels. Call it whenever the level changes
+//   player.bet    = level × baseSpin
+//                   → SPEND side. Used for: spin cost (deducted from
+//                     balance), buy-feature cost, totalWager stat,
+//                     "is this a meaningful win" UI thresholds.
+//                     Bigger baseSpin = more expensive per spin.
+//
+//   player.winBet = level
+//                   → WIN side. Used for: every payout multiplication
+//                     (regular blooms, scatter pays, tile multipliers,
+//                     feature payouts). Bigger baseSpin DOES NOT
+//                     multiply wins — pay tables are absolute at the
+//                     level=1 scale.
+//
+// Net effect: bumping a variant's baseSpin makes the variant more
+// expensive (player pays more per spin) without proportionally bigger
+// wins. This is a deliberate "premium variant feels riskier" design —
+// RTP drops as baseSpin grows. Pay tables in each variant config are
+// written ONCE at level=1 scale; you don't rewrite pays per variant.
+//
+// recomputeBet() re-derives both numbers from the current level +
+// variant and refreshes UI labels. Call it whenever the level changes
 // (cycleBet) or the variant changes (setAltMode).
 function getBaseSpin() {
   const v = getVariantConfig();
@@ -8378,9 +8410,16 @@ function getBaseSpin() {
 }
 function recomputeBet() {
   const level = player.betLevels[player.betIndex] || 1;
-  player.bet  = level * getBaseSpin();
+  player.bet    = level * getBaseSpin();   // spend side
+  player.winBet = level;                    // win side (NOT scaled by baseSpin)
   if (typeof updateBetText === 'function')        updateBetText();
   if (typeof updateSpinButtonState === 'function') updateSpinButtonState();
+  // Buy Feature price label = bet × featureCostMult, so it MUST refresh
+  // whenever bet changes. Without this the price stays stale until the
+  // next spin or feature transition triggers refreshFeatureUI().
+  if (typeof scene !== 'undefined' && scene && scene.buyBtn && scene.buyBtn._refresh) {
+    scene.buyBtn._refresh();
+  }
 }
 
 function cycleBet(direction = +1) {
@@ -10161,7 +10200,8 @@ function _startFeatureCore(cost) {
   player.feature.active          = true;
   player.feature.spinsLeft       = featureSpinCount();
   player.feature.cellMults       = makeEmptyCellMults();
-  player.feature.lockedBet       = player.bet;
+  player.feature.lockedBet       = player.bet;       // spend bet at trigger
+  player.feature.lockedWinBet    = player.winBet;    // win bet at trigger
   player.feature.totalWin        = 0;
   player.feature.costPaid        = cost;
   player.feature.emptyCountCarry = 0;
@@ -10205,6 +10245,7 @@ function endFeature() {
   player.feature.spinsLeft       = 0;
   player.feature.cellMults       = null;
   player.feature.lockedBet       = null;
+  player.feature.lockedWinBet    = null;
   player.feature.totalWin        = 0;
   player.feature.costPaid        = 0;
   player.feature.emptyCountCarry = 0;
@@ -10546,6 +10587,10 @@ function openPaytableModal(L) {
   const paytableContent = new PIXI.Container();
   modal.addChild(paytableContent);
 
+  // Paytable shows wins scaled by winBet (NOT the spend bet), so the
+  // numbers match what you'd actually receive per bloom. With baseSpin>1
+  // the bet is bigger but the win is anchored at level — that asymmetry
+  // is the whole design point and the paytable should display it honestly.
   const sub = new PIXI.Text(`Coins paid per Full Bloom (bet ${player.bet})`, {
     fontFamily: FONT, fontSize: 12 * scale, fill: 0x9C6A1A, letterSpacing: 1,
   });
@@ -10591,7 +10636,7 @@ function openPaytableModal(L) {
     name.y = cy + 18 * scale;
     paytableContent.addChild(name);
 
-    const coinVal = color.basePay * player.bet;
+    const coinVal = color.basePay * player.winBet;
     const pay = new PIXI.Text(`+${fmtCurrency(coinVal)}`, {
       fontFamily: FONT, fontSize: 28 * scale,
       fill: isTop ? 0xD4A017 : 0xE65C00,
@@ -11198,7 +11243,8 @@ async function onSpinClick() {
   }
 
   const inFeature = player.feature.active;
-  const bet = inFeature ? player.feature.lockedBet : player.bet;
+  const bet    = inFeature ? player.feature.lockedBet    : player.bet;
+  const winBet = inFeature ? player.feature.lockedWinBet : player.winBet;
 
   // 1. Deduct the bet up front (skip during free spins).
   if (!inFeature) {
@@ -11243,7 +11289,7 @@ async function onSpinClick() {
     // state). Modes without feature carry do nothing here.
     getModeDef().populateRunOpts?.(player, runOpts);
   }
-  const result = BloomSort.runSpin(bet, runOpts);
+  const result = BloomSort.runSpin(bet, runOpts, winBet);
   // Per-mode result handling — same one-call dispatch. Most modes
   // commit immediately; Bloom Ripple and Bloom Jackpot STASH new
   // state into `_alt5/6Pending*` fields so the animator can replay
@@ -11261,15 +11307,15 @@ async function onSpinClick() {
       // bump their feature widgets here (Bloom Reels' multiplier pill
       // pulses on changes) and update the running win readout in
       // their preferred place (status line vs. BLOOM WIN pill).
-      getModeDef().onCascadeDissolve?.(player, scene, ev, { bet, inFeature });
+      getModeDef().onCascadeDissolve?.(player, scene, ev, { bet, winBet, inFeature });
     }
   };
 
   animator.onEnd = async (finalResult) => {
     try {
       const mult = finalResult.multiplier;
-      const baseWin = finalResult.totalPayout * bet;   // pre-multiplier
-      const finalWin = finalResult.finalWin;           // post-multiplier
+      const baseWin = finalResult.totalPayout * winBet;   // pre-multiplier (in win-side coin units)
+      const finalWin = finalResult.finalWin;              // post-multiplier
 
       // Per-mode commit: Bloom Ripple / Bloom Jackpot stash the
       // post-spin state during runSpin so the animator's bar / pots
@@ -11299,7 +11345,7 @@ async function onSpinClick() {
       // the spin's finalWin into player.feature.totalWin and finalise
       // the status text.
       await getModeDef().onSpinEnd?.(player, scene, finalResult,
-        { bet, baseWin, finalWin, mult });
+        { bet, winBet, baseWin, finalWin, mult });
       // Outside the feature, reset the pill state baseline. Inside the
       // feature we keep the displayed multiplier so the next free spin
       // picks up where this one left off.
