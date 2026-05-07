@@ -425,49 +425,48 @@ const VARIANT_CONFIGS = {
 
     rows: 5,
     cols: 6,
-    maxPetals: 6,
+    maxPetals: 8,
 
-    wildWeight:      3,
+    wildWeight:      0.65,
     wildMaxPerSpin:  6,
     wildPetalWeights: [
-      { count: 6, weight: 1 },
+      { count: 8, weight: 1 },
     ],
 
     petalWeights: [
-      { count: 1, weight: 42 },
-      { count: 2, weight: 21 },
-      { count: 3, weight: 8 },
-      { count: 4, weight: 3 },
+      { count: 1, weight: 60 },
+      { count: 2, weight: 25 },
+      { count: 3, weight: 10 },
+      { count: 4, weight:  5 },
     ],
 
     multTileWeights: [
-      { value:   4, weight: 40 },
-      { value:   8, weight: 25 },
-      { value:  10, weight: 15 },
-      { value:  20, weight: 10 },
-      { value:  50, weight:  5 },
-      { value: 100, weight:  3 },
-      { value: 500, weight:  2 },
+      { value:   2, weight: 50 },
+      { value:  10, weight: 25 },
+      { value:  20, weight: 12 },
+      { value:  50, weight:  8 },
+      { value: 100, weight:  4 },
+      { value: 500, weight:  1 },
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
-      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
-      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
-      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
-      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
-      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
-      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
+      { name: 'Scarlet', weight: 5,  basePay: 5,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 7,  basePay: 3,    hex: '#304FFE' },
+      { name: 'Magenta', weight: 9,  basePay: 1.5, hex: '#C2185B' },
+      { name: 'Gold',    weight: 12,  basePay: 0.8,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 15,  basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
+      { name: 'Sky',     weight: 21,  basePay: 0.1,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 25,  basePay: 0.05,  hex: '#78909C' },
     ],
 
-    scatterWeight:        2.3,
+    scatterWeight:        1.5,
     scatterWeightFeature: 0.5,
     scatterPayouts: { 4: 15, 5: 30, 6: 300 },
 
     featureSpins:    10,
     retriggerSpins:   5,
-    featureCostMult: 200,
+    featureCostMult: 100,
   },
 
   alt4e: {
