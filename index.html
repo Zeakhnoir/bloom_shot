@@ -427,7 +427,7 @@ const VARIANT_CONFIGS = {
     cols: 6,
     maxPetals: 8,
 
-    wildWeight:      0.65,
+    wildWeight:      1.2,
     wildMaxPerSpin:  6,
     wildPetalWeights: [
       { count: 8, weight: 1 },
@@ -435,18 +435,20 @@ const VARIANT_CONFIGS = {
 
     petalWeights: [
       { count: 1, weight: 60 },
-      { count: 2, weight: 25 },
-      { count: 3, weight: 10 },
+      { count: 2, weight: 24 },
+      { count: 3, weight: 9 },
       { count: 4, weight:  5 },
+      { count: 5, weight:  1 },
     ],
 
     multTileWeights: [
-      { value:   2, weight: 50 },
+      { value:   2, weight: 45 },
       { value:  10, weight: 25 },
-      { value:  20, weight: 12 },
-      { value:  50, weight:  8 },
+      { value:  20, weight: 15 },
+      { value:  50, weight:  10 },
       { value: 100, weight:  4 },
       { value: 500, weight:  1 },
+      { value: 1000, weight:  0.5 },
     ],
 
     colors: [
@@ -465,7 +467,7 @@ const VARIANT_CONFIGS = {
     scatterPayouts: { 4: 15, 5: 30, 6: 300 },
 
     featureSpins:    10,
-    retriggerSpins:   5,
+    retriggerSpins:   4,
     featureCostMult: 100,
   },
 
