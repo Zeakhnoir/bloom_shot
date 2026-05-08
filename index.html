@@ -257,25 +257,6 @@ const COLOR_BY_NAME = Object.fromEntries(GAME.COLORS.map(c => [c.name, c]));
 //   featureCostMult   — Buy Feature price = featureCostMult × bet
 
 const VARIANT_CONFIGS = {
-  // ── How `feature: { ... }` works ──────────────────────────────────
-  // Each variant carries an optional `feature` block. Any field
-  // present overrides the base value DURING the free-spin feature
-  // (both scatter-triggered and Buy Feature). Any field omitted
-  // falls through to the base. This lets you tune the feature
-  // independently — different colors / pays, different petal density,
-  // different tile multipliers, different scatter pays, different
-  // wild density, etc.
-  //
-  // Override-able keys (anything else is base-only):
-  //   colors, petalWeights, multTileWeights, maxPetals,
-  //   wildWeight, wildMaxPerSpin, wildPetalWeights,
-  //   scatterPayouts, scatterWeight.
-  //
-  // To use the same value as the base in feature, just delete the line
-  // from the `feature` block (or the whole block) — fall-through wins.
-  // The default block below is a 1-for-1 mirror of base. Edit any
-  // line to differentiate the feature.
-
   alt4a: {
     label: 'Variant A',
     baseSpin: 7,
@@ -288,6 +269,7 @@ const VARIANT_CONFIGS = {
     wildMaxPerSpin:  6,
     wildPetalWeights: [
       { count: 6, weight: 1 },
+     
     ],
 
     petalWeights: [
@@ -308,14 +290,14 @@ const VARIANT_CONFIGS = {
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-      { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
+      { name: 'Scarlet', weight: 10,  basePay: 1,  hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,    hex: '#304FFE' },
       { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-      { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-      { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-      { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
+      { name: 'Gold',    weight: 16, basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16, basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 18, basePay: 0.2, hex: '#558B2F' },
+      { name: 'Sky',     weight: 18, basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
     ],
 
     scatterWeight:        2.3,
@@ -325,51 +307,6 @@ const VARIANT_CONFIGS = {
     featureSpins:    10,
     retriggerSpins:   5,
     featureCostMult: 60,
-
-    // ── FEATURE OVERRIDES (free-spin layer) ─────────────────────────
-    // Edit any line below to differentiate the feature from base.
-    // Delete a line (or the whole `feature:` block) to fall through
-    // to the base value above.
-    feature: {
-      maxPetals: 6,
-
-      wildWeight:      3,
-      wildMaxPerSpin:  6,
-      wildPetalWeights: [
-        { count: 6, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 42 },
-        { count: 2, weight: 21 },
-        { count: 3, weight: 8 },
-        { count: 4, weight: 3 },
-      ],
-
-      multTileWeights: [
-        { value:   4, weight: 40 },
-        { value:   8, weight: 25 },
-        { value:  10, weight: 15 },
-        { value:  20, weight: 10 },
-        { value:  50, weight:  5 },
-        { value: 100, weight:  3 },
-        { value: 500, weight:  2 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-        { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-        { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-        { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-        { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-        { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-        { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-        { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.5,                            // free-spin retrigger weight
-      scatterPayouts: { 4: 15, 5: 30, 6: 300 },
-    },
   },
 
   alt4b: {
@@ -405,14 +342,14 @@ const VARIANT_CONFIGS = {
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-      { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
+      { name: 'Scarlet', weight: 10,  basePay: 1,  hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,    hex: '#304FFE' },
       { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-      { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-      { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-      { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
+      { name: 'Gold',    weight: 16, basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16, basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 18, basePay: 0.2, hex: '#558B2F' },
+      { name: 'Sky',     weight: 18, basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20, basePay: 0.1, hex: '#78909C' },
     ],
 
     scatterWeight:        4,
@@ -422,48 +359,6 @@ const VARIANT_CONFIGS = {
     featureSpins:    15,
     retriggerSpins:   5,
     featureCostMult: 50,
-
-    feature: {
-      maxPetals: 8,
-
-      wildWeight:      3,
-      wildMaxPerSpin:  5,
-      wildPetalWeights: [
-        { count: 8, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 42 },
-        { count: 2, weight: 32 },
-        { count: 3, weight: 10 },
-        { count: 4, weight:  6 },
-        { count: 5, weight:  2 },
-      ],
-
-      multTileWeights: [
-        { value:   4, weight: 40 },
-        { value:   8, weight: 25 },
-        { value:  10, weight: 15 },
-        { value:  20, weight: 10 },
-        { value:  50, weight:  5 },
-        { value: 100, weight:  3 },
-        { value: 500, weight:  2 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-        { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-        { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-        { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-        { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-        { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-        { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-        { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.5,
-      scatterPayouts: { 4: 5, 5: 10, 6: 200 },
-    },
   },
 
   alt4c: {
@@ -477,7 +372,7 @@ const VARIANT_CONFIGS = {
     wildWeight:      1,
     wildMaxPerSpin:  6,
     wildPetalWeights: [
-      { count: 8, weight: 1 },
+      { count: 8, weight:  1 },
     ],
 
     petalWeights: [
@@ -488,21 +383,21 @@ const VARIANT_CONFIGS = {
     ],
 
     multTileWeights: [
-      { value:    2, weight: 50 },
-      { value:    5, weight: 25 },
-      { value:   20, weight: 12 },
-      { value:  100, weight:  8 },
-      { value:  500, weight:  4 },
+      { value:   2, weight: 50 },
+      { value:   5, weight: 25 },
+      { value:  20, weight: 12 },
+      { value:  100, weight: 8 },
+      { value: 500, weight:  4 },
       { value: 2000, weight:  1 },
     ],
 
     colors: [
-      { name: 'Scarlet', weight:  4, basePay: 5,    hex: '#D50000' },
-      { name: 'Indigo',  weight:  6, basePay: 3,    hex: '#304FFE' },
-      { name: 'Magenta', weight:  8, basePay: 1.5,  hex: '#C2185B' },
+      { name: 'Scarlet', weight: 4,  basePay: 5,  hex: '#D50000' },
+      { name: 'Indigo',  weight: 6,  basePay: 3,    hex: '#304FFE' },
+      { name: 'Magenta', weight: 8,  basePay: 1.5, hex: '#C2185B' },
       { name: 'Gold',    weight: 11, basePay: 0.8,  hex: '#FF6F00' },
-      { name: 'Teal',    weight: 14, basePay: 0.4,  hex: '#00796B' },
-      { name: 'Lime',    weight: 17, basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Teal',    weight: 14, basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 17, basePay: 0.2, hex: '#558B2F' },
       { name: 'Sky',     weight: 20, basePay: 0.1,  hex: '#0277BD' },
       { name: 'Pearl',   weight: 24, basePay: 0.05, hex: '#78909C' },
     ],
@@ -514,46 +409,6 @@ const VARIANT_CONFIGS = {
     featureSpins:    12,
     retriggerSpins:   5,
     featureCostMult: 60,
-
-    feature: {
-      maxPetals: 8,
-
-      wildWeight:      1,
-      wildMaxPerSpin:  6,
-      wildPetalWeights: [
-        { count: 8, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 60 },
-        { count: 2, weight: 25 },
-        { count: 3, weight: 10 },
-        { count: 4, weight:  5 },
-      ],
-
-      multTileWeights: [
-        { value:    2, weight: 50 },
-        { value:    5, weight: 25 },
-        { value:   20, weight: 12 },
-        { value:  100, weight:  8 },
-        { value:  500, weight:  4 },
-        { value: 2000, weight:  1 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight:  4, basePay: 5,    hex: '#D50000' },
-        { name: 'Indigo',  weight:  6, basePay: 3,    hex: '#304FFE' },
-        { name: 'Magenta', weight:  8, basePay: 1.5,  hex: '#C2185B' },
-        { name: 'Gold',    weight: 11, basePay: 0.8,  hex: '#FF6F00' },
-        { name: 'Teal',    weight: 14, basePay: 0.4,  hex: '#00796B' },
-        { name: 'Lime',    weight: 17, basePay: 0.2,  hex: '#558B2F' },
-        { name: 'Sky',     weight: 20, basePay: 0.1,  hex: '#0277BD' },
-        { name: 'Pearl',   weight: 24, basePay: 0.05, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.4,
-      scatterPayouts: { 4: 5, 5: 50, 6: 1000 },
-    },
   },
 
   // ── Variants D / E / F — clones of Variant A ─────────────────────
@@ -572,7 +427,7 @@ const VARIANT_CONFIGS = {
     cols: 6,
     maxPetals: 8,
 
-    wildWeight:      1,
+    wildWeight:      0.65,
     wildMaxPerSpin:  6,
     wildPetalWeights: [
       { count: 8, weight: 1 },
@@ -591,69 +446,27 @@ const VARIANT_CONFIGS = {
       { value:  20, weight: 12 },
       { value:  50, weight:  8 },
       { value: 100, weight:  4 },
-      { value: 200, weight:  1 },
+      { value: 500, weight:  1 },
     ],
 
     colors: [
-      { name: 'Scarlet', weight:  5, basePay: 5,    hex: '#D50000' },
-      { name: 'Indigo',  weight:  7, basePay: 3,    hex: '#304FFE' },
-      { name: 'Magenta', weight:  9, basePay: 1.5,  hex: '#C2185B' },
-      { name: 'Gold',    weight: 12, basePay: 0.8,  hex: '#FF6F00' },
-      { name: 'Teal',    weight: 15, basePay: 0.4,  hex: '#00796B' },
-      { name: 'Lime',    weight: 18, basePay: 0.2,  hex: '#558B2F' },
-      { name: 'Sky',     weight: 21, basePay: 0.1,  hex: '#0277BD' },
-      { name: 'Pearl',   weight: 25, basePay: 0.05, hex: '#78909C' },
+      { name: 'Scarlet', weight: 5,  basePay: 5,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 7,  basePay: 3,    hex: '#304FFE' },
+      { name: 'Magenta', weight: 9,  basePay: 1.5, hex: '#C2185B' },
+      { name: 'Gold',    weight: 12,  basePay: 0.8,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 15,  basePay: 0.4,    hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
+      { name: 'Sky',     weight: 21,  basePay: 0.1,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 25,  basePay: 0.05,  hex: '#78909C' },
     ],
 
-    scatterWeight:        1.4,
+    scatterWeight:        1.5,
     scatterWeightFeature: 0.5,
-    scatterPayouts: { 4: 5, 5: 10, 6: 100 },
+    scatterPayouts: { 4: 15, 5: 30, 6: 300 },
 
     featureSpins:    10,
     retriggerSpins:   5,
     featureCostMult: 100,
-
-    feature: {
-      maxPetals: 8,
-
-      wildWeight:      1.2,
-      wildMaxPerSpin:  6,
-      wildPetalWeights: [
-        { count: 8, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 60 },
-        { count: 2, weight: 24 },
-        { count: 3, weight: 9 },
-        { count: 4, weight:  5 },
-        { count: 5, weight:  1 },
-      ],
-
-      multTileWeights: [
-        { value:   2, weight: 50 },
-        { value:  10, weight: 25 },
-        { value:  20, weight: 12 },
-        { value:  50, weight:  8 },
-        { value: 100, weight:  4 },
-        { value: 500, weight:  1 },
-         { value: 1000, weight:  0.5 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight:  5, basePay: 5,    hex: '#D50000' },
-        { name: 'Indigo',  weight:  7, basePay: 3,    hex: '#304FFE' },
-        { name: 'Magenta', weight:  9, basePay: 1.5,  hex: '#C2185B' },
-        { name: 'Gold',    weight: 12, basePay: 0.8,  hex: '#FF6F00' },
-        { name: 'Teal',    weight: 15, basePay: 0.4,  hex: '#00796B' },
-        { name: 'Lime',    weight: 18, basePay: 0.2,  hex: '#558B2F' },
-        { name: 'Sky',     weight: 21, basePay: 0.1,  hex: '#0277BD' },
-        { name: 'Pearl',   weight: 25, basePay: 0.05, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.5,
-      scatterPayouts: { 4: 5, 5: 10, 6: 100 },
-    },
   },
 
   alt4e: {
@@ -688,14 +501,14 @@ const VARIANT_CONFIGS = {
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-      { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-      { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-      { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-      { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-      { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
+      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
+      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
     ],
 
     scatterWeight:        2.3,
@@ -705,47 +518,6 @@ const VARIANT_CONFIGS = {
     featureSpins:    10,
     retriggerSpins:   5,
     featureCostMult: 600,
-
-    feature: {
-      maxPetals: 6,
-
-      wildWeight:      3,
-      wildMaxPerSpin:  6,
-      wildPetalWeights: [
-        { count: 6, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 42 },
-        { count: 2, weight: 21 },
-        { count: 3, weight: 8 },
-        { count: 4, weight: 3 },
-      ],
-
-      multTileWeights: [
-        { value:   4, weight: 40 },
-        { value:   8, weight: 25 },
-        { value:  10, weight: 15 },
-        { value:  20, weight: 10 },
-        { value:  50, weight:  5 },
-        { value: 100, weight:  3 },
-        { value: 500, weight:  2 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-        { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-        { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-        { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-        { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-        { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-        { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-        { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.5,
-      scatterPayouts: { 4: 15, 5: 30, 6: 300 },
-    },
   },
 
   alt4f: {
@@ -780,14 +552,14 @@ const VARIANT_CONFIGS = {
     ],
 
     colors: [
-      { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-      { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-      { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-      { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-      { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-      { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-      { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-      { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
+      { name: 'Scarlet', weight: 10,  basePay: 1,    hex: '#D50000' },
+      { name: 'Indigo',  weight: 12,  basePay: 0.8,  hex: '#304FFE' },
+      { name: 'Magenta', weight: 14,  basePay: 0.6,  hex: '#C2185B' },
+      { name: 'Gold',    weight: 16,  basePay: 0.4,  hex: '#FF6F00' },
+      { name: 'Teal',    weight: 16,  basePay: 0.4,  hex: '#00796B' },
+      { name: 'Lime',    weight: 18,  basePay: 0.2,  hex: '#558B2F' },
+      { name: 'Sky',     weight: 18,  basePay: 0.2,  hex: '#0277BD' },
+      { name: 'Pearl',   weight: 20,  basePay: 0.1,  hex: '#78909C' },
     ],
 
     scatterWeight:        2.3,
@@ -797,47 +569,6 @@ const VARIANT_CONFIGS = {
     featureSpins:    10,
     retriggerSpins:   5,
     featureCostMult: 800,
-
-    feature: {
-      maxPetals: 6,
-
-      wildWeight:      3,
-      wildMaxPerSpin:  6,
-      wildPetalWeights: [
-        { count: 6, weight: 1 },
-      ],
-
-      petalWeights: [
-        { count: 1, weight: 42 },
-        { count: 2, weight: 21 },
-        { count: 3, weight: 8 },
-        { count: 4, weight: 3 },
-      ],
-
-      multTileWeights: [
-        { value:   4, weight: 40 },
-        { value:   8, weight: 25 },
-        { value:  10, weight: 15 },
-        { value:  20, weight: 10 },
-        { value:  50, weight:  5 },
-        { value: 100, weight:  3 },
-        { value: 500, weight:  2 },
-      ],
-
-      colors: [
-        { name: 'Scarlet', weight: 10,  basePay: 1,   hex: '#D50000' },
-        { name: 'Indigo',  weight: 12,  basePay: 0.8, hex: '#304FFE' },
-        { name: 'Magenta', weight: 14,  basePay: 0.6, hex: '#C2185B' },
-        { name: 'Gold',    weight: 16,  basePay: 0.4, hex: '#FF6F00' },
-        { name: 'Teal',    weight: 16,  basePay: 0.4, hex: '#00796B' },
-        { name: 'Lime',    weight: 18,  basePay: 0.2, hex: '#558B2F' },
-        { name: 'Sky',     weight: 18,  basePay: 0.2, hex: '#0277BD' },
-        { name: 'Pearl',   weight: 20,  basePay: 0.1, hex: '#78909C' },
-      ],
-
-      scatterWeight:  0.5,
-      scatterPayouts: { 4: 15, 5: 30, 6: 300 },
-    },
   },
 };
 
@@ -849,55 +580,12 @@ function getVariantConfig() {
   return VARIANT_CONFIGS[ALT_MODE] || VARIANT_CONFIGS.alt4a;
 }
 
-// ── Per-variant feature overrides ────────────────────────────────────
-// Each variant can carry an optional `feature: { ... }` block whose
-// fields override the base values DURING free spins (the feature). A
-// missing field falls through to the base. This lets every variant
-// declare a completely separate pay table, weight table, tile table,
-// etc. for the feature without forcing it to.
-//
-// The feature override applies to *spawn-time* values that affect
-// per-spin gameplay:
-//   colors, petalWeights, multTileWeights, maxPetals,
-//   wildWeight, wildMaxPerSpin, wildPetalWeights, scatterPayouts.
-//
-// Session-level fields (baseSpin, featureCostMult, featureSpins,
-// retriggerSpins, rows, cols, label) are NEVER overridden — they're
-// fixed for the whole session at trigger time and don't make sense
-// to swap mid-feature.
-//
-// scatterWeight has its own legacy override path (scatterWeightFeature
-// at the variant top level), kept for backwards compat. The new path
-// also works: variant.feature.scatterWeight overrides for free spins.
-const _FEATURE_OVERRIDABLE_KEYS = [
-  'colors', 'petalWeights', 'multTileWeights', 'maxPetals',
-  'wildWeight', 'wildMaxPerSpin', 'wildPetalWeights',
-  'scatterPayouts', 'scatterWeight',
-];
-function getActiveConfig() {
-  const v = getVariantConfig();
-  const inFeature = !!(typeof player !== 'undefined'
-                       && player && player.feature && player.feature.active);
-  if (!inFeature || !v.feature) return v;
-  // Shallow merge: any feature-block field overrides; anything absent
-  // falls through to base. Only spawn-time keys are merged; session
-  // fields stay base-only.
-  const merged = Object.assign({}, v);
-  for (const k of _FEATURE_OVERRIDABLE_KEYS) {
-    if (Object.prototype.hasOwnProperty.call(v.feature, k)) {
-      merged[k] = v.feature[k];
-    }
-  }
-  return merged;
-}
-
 // Apply a variant's data to the GAME object. Called whenever the
-// active variant changes OR the feature starts/ends so every
-// downstream lookup (GAME.COLORS, GAME.PETAL_WEIGHTS,
-// GAME.MULT_TILE_WEIGHTS, GAME.ROWS/COLS) stays in sync with the
-// active feature/base layer.
+// active variant changes so every downstream lookup (GAME.COLORS,
+// GAME.PETAL_WEIGHTS, GAME.MULT_TILE_WEIGHTS, GAME.ROWS/COLS) stays
+// in sync with the variant's config.
 function applyVariantToGame() {
-  const v = getActiveConfig();
+  const v = getVariantConfig();
   GAME.ROWS              = v.rows;
   GAME.COLS              = v.cols;
   GAME.MAX_PETALS        = v.maxPetals;
@@ -1025,7 +713,7 @@ const SCATTER_MAX_ON_GRID     = 6;
 const SCATTER_TRIGGER_COUNT   = 4;   // 4+ scatters → feature
 const SCATTER_RETRIGGER_COUNT = 3;   // 3+ scatters during feature → variant.retriggerSpins
 // Helper accessors that read from the active variant.
-function getScatterPayouts() { return getActiveConfig().scatterPayouts; }
+function getScatterPayouts() { return getVariantConfig().scatterPayouts; }
 
 // Live tally of scatters currently on the grid. The engine mutates this
 // as cells are spawned/refilled so spawnCell can gate the 6-cap without
@@ -1042,7 +730,7 @@ function spawnScatterCell() {
 }
 
 function spawnWildCell() {
-  const n = weightedPick(getActiveConfig().wildPetalWeights).count;
+  const n = weightedPick(getVariantConfig().wildPetalWeights).count;
   const petalColors = [];
   for (let i = 0; i < n; i++) {
     petalColors.push(weightedPick(GAME.COLORS).name);
@@ -1067,9 +755,6 @@ function getScatterWeight() {
   const inFeature = !!(player && player.feature && player.feature.active);
   const v         = getVariantConfig();
   if (inFeature) {
-    // Priority: feature.scatterWeight (new) > scatterWeightFeature (legacy)
-    // > scatterWeight (base, if neither override is supplied).
-    if (v.feature && v.feature.scatterWeight !== undefined) return v.feature.scatterWeight;
     return (v.scatterWeightFeature !== undefined ? v.scatterWeightFeature : v.scatterWeight) || 0;
   }
   return v.scatterWeight || 0;
@@ -1079,7 +764,7 @@ function getScatterWeight() {
 // spawnCell() — once the cap is hit, the wild slot is removed from the
 // pool entirely for the rest of the spin.
 function getWildWeight() {
-  return getActiveConfig().wildWeight || 0;
+  return getVariantConfig().wildWeight || 0;
 }
 
 function spawnCell() {
@@ -1120,7 +805,7 @@ function spawnCell() {
   const usesWild = !!(hooks && hooks.rollSpecialSpawn === HOOKS_ALT4.rollSpecialSpawn);
   let wWild = 0;
   if (usesWild) {
-    const variant = getActiveConfig();
+    const variant = getVariantConfig();
     const cap     = variant.wildMaxPerSpin ?? Infinity;
     if ((HOOKS_ALT4._wildsThisSpin || 0) < cap) {
       wWild = getWildWeight();
@@ -10518,12 +10203,6 @@ function _startFeatureCore(cost) {
   player.feature.lockedWinBet    = player.winBet;    // win bet at trigger
   player.feature.totalWin        = 0;
   player.feature.costPaid        = cost;
-  // Swap GAME.* to whatever the feature override layer specifies.
-  // For variants without a `feature: {...}` block this is a no-op.
-  // For variants with one, the feature's colors/petalWeights/
-  // multTileWeights/maxPetals replace the base values for the
-  // duration of the free spins.
-  applyVariantToGame();
   player.feature.emptyCountCarry = 0;
   // Mode-agnostic defaults; per-mode `initFeatureState` overrides any
   // field that should be non-null at feature start (Bloom Reels seeds
@@ -10576,10 +10255,6 @@ function endFeature() {
   player.feature._alt5RewardsThisSpin = [];
   player.feature.alt6Jackpots    = null;
   player.feature._alt6JackpotPaysThisSpin = [];
-  // Revert GAME.* to base-layer values now that feature.active is false
-  // — the merger in getActiveConfig() returns the base config when not
-  // in a feature, so this re-applies the base colors/petalWeights/etc.
-  applyVariantToGame();
   // Credit the full feature win to the balance NOW — during the feature
   // itself the balance was held unchanged.
   if (totalWon > 0) {
